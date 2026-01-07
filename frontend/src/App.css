@@ -36,3 +36,14 @@
     transform: rotate(360deg);
   }
 }
+ html {
+  font-size: 16px; /* Ensure base font size */
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* If using Tailwind or similar, check your config */

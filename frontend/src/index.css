@@ -116,3 +116,7 @@ body {
 .border-theme {
   border-color: var(--border-color);
 }
+.main-container {
+  max-width: 100%;
+  margin: 0 auto;
+}
