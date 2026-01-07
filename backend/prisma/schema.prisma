@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Notification {
+  id                 String            @id @default(uuid())
+  recipientId        String
+  recipient          Recipient         @relation(fields: [recipientId], references: [id])
+  content            String
+  category           String
+  channel            String
+  status             String            @default("pending")
+  readAt             DateTime?
+  canceledAt         DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  bulkNotificationId String? // Add this for bulk notifications
+  bulkNotification   BulkNotification? @relation(fields: [bulkNotificationId], references: [id])
+}
+
+model Recipient {
+  id            String         @id @default(uuid())
+  name          String
+  email         String
+  phone         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  notifications Notification[]
+}
+
+model EmailTemplate {
+  id                String             @id @default(uuid())
+  name              String             @unique
+  subject           String
+  htmlBody          String
+  textBody          String?
+  variables         String[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  bulkNotifications BulkNotification[] // Add this opposite relation
+}
+
+model BulkNotification {
+  id            String         @id @default(uuid())
+  name          String
+  template      EmailTemplate  @relation(fields: [templateId], references: [id])
+  templateId    String
+  status        String         @default("draft")
+  sentCount     Int            @default(0)
+  totalCount    Int
+  createdAt     DateTime       @default(now())
+  notifications Notification[]
+}
