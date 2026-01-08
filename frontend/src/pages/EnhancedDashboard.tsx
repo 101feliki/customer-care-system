@@ -4,10 +4,10 @@ import EnhancedNotificationCard from '../components/EnhancedNotificationCard';
 import AnalyticsDashboard from '../components/AnalyticsDashboard';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import FilterBar from '../components/FilterBar';
-import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import notificationService, { Notification } from '../services/notificationService';
 
-const DashboardContent: React.FC = () => {
+const Dashboard: React.FC = () => {
   const { theme } = useTheme();
   const [view, setView] = useState<'list' | 'analytics'>('list');
   const [starredNotifications, setStarredNotifications] = useState<Set<string>>(new Set());
@@ -118,39 +118,40 @@ const DashboardContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-primary flex">
+    <div className="h-screen flex overflow-hidden bg-primary">
       <Sidebar />
       
-      {/* Main content area - REMOVED lg:ml-64, using flex-1 to fill space */}
-      <div className="flex-1 min-h-screen overflow-x-hidden">
-        <header className="bg-secondary border-b border-color sticky top-0 z-30">
-          <div className="px-6 py-4">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Main content area - FIXED SCROLLING STRUCTURE */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {/* Fixed header */}
+        <header className="bg-card border-b border-color flex-shrink-0 sticky top-0 z-20">
+          <div className="px-4 py-3 md:px-6 md:py-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div>
-                <h1 className="text-2xl font-bold text-primary">Notifications Dashboard</h1>
-                <p className="text-secondary">Manage and monitor all customer notifications</p>
+                <h1 className="text-lg md:text-xl font-bold text-primary">Notifications Dashboard</h1>
+                <p className="text-sm text-secondary">Manage and monitor all customer notifications</p>
               </div>
               
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3">
                 <ThemeSwitcher />
                 
                 <div className="flex space-x-2">
                   <button
                     onClick={() => setView('list')}
-                    className={`px-4 py-2 rounded-lg ${
+                    className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
                       view === 'list' 
                         ? 'bg-blue-600 text-white' 
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                        : 'bg-hover text-primary hover:bg-opacity-80'
                     }`}
                   >
                     List View
                   </button>
                   <button
                     onClick={() => setView('analytics')}
-                    className={`px-4 py-2 rounded-lg ${
+                    className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
                       view === 'analytics' 
                         ? 'bg-blue-600 text-white' 
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                        : 'bg-hover text-primary hover:bg-opacity-80'
                     }`}
                   >
                     Analytics
@@ -163,51 +164,52 @@ const DashboardContent: React.FC = () => {
           <FilterBar filters={filters} setFilters={setFilters} />
         </header>
 
-        <main className="p-6">
+        {/* Scrollable main content - THIS IS THE KEY FIX */}
+        <main className="flex-1 overflow-y-auto min-h-0 p-3 md:p-4">
           {view === 'list' ? (
             <>
               {/* Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div className="bg-card rounded-xl shadow-sm p-4 border border-color">
-                  <div className="text-sm text-secondary">Total Notifications</div>
-                  <div className="text-2xl font-bold text-primary">{stats.total}</div>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                <div className="bg-card rounded-lg shadow-sm p-3 border border-color">
+                  <div className="text-xs text-secondary">Total Notifications</div>
+                  <div className="text-lg font-bold text-primary">{stats.total}</div>
                 </div>
-                <div className="bg-card rounded-xl shadow-sm p-4 border border-color">
-                  <div className="text-sm text-secondary">Unread</div>
-                  <div className="text-2xl font-bold text-blue-600">{stats.unread}</div>
+                <div className="bg-card rounded-lg shadow-sm p-3 border border-color">
+                  <div className="text-xs text-secondary">Unread</div>
+                  <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{stats.unread}</div>
                 </div>
-                <div className="bg-card rounded-xl shadow-sm p-4 border border-color">
-                  <div className="text-sm text-secondary">Starred</div>
-                  <div className="text-2xl font-bold text-yellow-600">{stats.starred}</div>
+                <div className="bg-card rounded-lg shadow-sm p-3 border border-color">
+                  <div className="text-xs text-secondary">Starred</div>
+                  <div className="text-lg font-bold text-yellow-600 dark:text-yellow-400">{stats.starred}</div>
                 </div>
-                <div className="bg-card rounded-xl shadow-sm p-4 border border-color">
-                  <div className="text-sm text-secondary">Cancelled</div>
-                  <div className="text-2xl font-bold text-red-600">{stats.cancelled}</div>
+                <div className="bg-card rounded-lg shadow-sm p-3 border border-color">
+                  <div className="text-xs text-secondary">Cancelled</div>
+                  <div className="text-lg font-bold text-red-600 dark:text-red-400">{stats.cancelled}</div>
                 </div>
               </div>
 
               {/* Notifications list */}
-              <div className="bg-card rounded-xl shadow-sm p-6 border border-color">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-semibold text-primary">Recent Notifications</h2>
-                  <div className="text-sm text-secondary">
+              <div className="bg-card rounded-lg shadow-sm p-4 border border-color">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold text-primary">Recent Notifications</h2>
+                  <div className="text-xs text-secondary">
                     Showing {filteredNotifications.length} of {notifications.length}
                   </div>
                 </div>
 
                 {loading ? (
-                  <div className="text-center py-12">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-                    <p className="mt-4 text-secondary">Loading notifications...</p>
+                  <div className="text-center py-8">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    <p className="mt-3 text-sm text-secondary">Loading notifications...</p>
                   </div>
                 ) : filteredNotifications.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="text-gray-400 text-4xl mb-4">📭</div>
-                    <h3 className="text-lg font-medium text-primary">No notifications found</h3>
-                    <p className="text-secondary">Try adjusting your filters or create a new notification</p>
+                  <div className="text-center py-8">
+                    <div className="text-gray-400 text-3xl mb-3">📭</div>
+                    <h3 className="text-base font-medium text-primary">No notifications found</h3>
+                    <p className="text-sm text-secondary">Try adjusting your filters or create a new notification</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {filteredNotifications.slice(0, 10).map((notification) => (
                       <EnhancedNotificationCard
                         key={notification.id}
@@ -229,14 +231,6 @@ const DashboardContent: React.FC = () => {
         </main>
       </div>
     </div>
-  );
-};
-
-const Dashboard: React.FC = () => {
-  return (
-    <ThemeProvider>
-      <DashboardContent />
-    </ThemeProvider>
   );
 };
 

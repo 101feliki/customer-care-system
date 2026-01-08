@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   BellIcon,
@@ -17,18 +17,44 @@ import { useTheme } from '../contexts/ThemeContext';
 
 const Sidebar: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const { theme } = useTheme();
   const location = useLocation();
+
+  // Check if mobile on mount and resize
+  useEffect(() => {
+    const checkIfMobile = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setIsCollapsed(false); // Always show on desktop
+      } else {
+        setIsCollapsed(true); // Collapse by default on mobile
+      }
+    };
+    
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    
+    return () => window.removeEventListener('resize', checkIfMobile);
+  }, []);
+
+  // Close mobile sidebar when navigating on mobile
+  useEffect(() => {
+    if (isMobile) {
+      setIsCollapsed(true);
+    }
+  }, [location.pathname, isMobile]);
 
   const menuItems = [
     { path: '/dashboard', icon: HomeIcon, label: 'Dashboard' },
     { path: '/notifications', icon: BellIcon, label: 'Notifications' },
-    { path: '/messages', icon: EnvelopeIcon, label: 'Messages' },
+    
     { path: '/recipients', icon: UserGroupIcon, label: 'Recipients' },
     { path: '/templates', icon: DocumentTextIcon, label: 'Templates' },
     { path: '/archive', icon: ArchiveBoxIcon, label: 'Archive' },
-    { path: '/analytics', icon: ChartBarIcon, label: 'Analytics' },
-    { path: '/schedule', icon: CalendarIcon, label: 'Schedule' },
+    
+    
     { path: '/settings', icon: CogIcon, label: 'Settings' },
   ];
 
@@ -37,40 +63,44 @@ const Sidebar: React.FC = () => {
   return (
     <>
       {/* Mobile menu button */}
-      <button
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className={`lg:hidden fixed top-4 left-4 z-50 p-2.5 rounded-lg shadow-lg border ${
-          theme === 'dark' 
-            ? 'bg-gray-800 border-gray-700' 
-            : 'bg-white border-gray-200'
-        }`}
-      >
-        {isCollapsed ? (
-          <XMarkIcon className={`h-6 w-6 ${
-            theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-          }`} />
-        ) : (
-          <Bars3Icon className={`h-6 w-6 ${
-            theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-          }`} />
-        )}
-      </button>
+      {isMobile && (
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className={`lg:hidden fixed top-4 left-4 z-50 p-2.5 rounded-lg shadow-lg border transition-colors ${
+            theme === 'dark' 
+              ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' 
+              : 'bg-white border-gray-200 hover:bg-gray-50'
+          }`}
+          aria-label={isCollapsed ? "Open menu" : "Close menu"}
+        >
+          {isCollapsed ? (
+            <Bars3Icon className={`h-6 w-6 ${
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+            }`} />
+          ) : (
+            <XMarkIcon className={`h-6 w-6 ${
+              theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+            }`} />
+          )}
+        </button>
+      )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:relative top-0 left-0 h-screen z-40 transition-transform duration-300 ${
-          isCollapsed ? '-translate-x-full' : 'translate-x-0'
-        } w-64 flex-shrink-0 flex flex-col ${
+        className={`fixed lg:static top-0 left-0 h-screen z-40 transition-transform duration-300 ease-in-out flex-shrink-0 ${
+          isCollapsed && isMobile ? '-translate-x-full' : 'translate-x-0'
+        } w-64 flex flex-col ${
           theme === 'dark' 
             ? 'bg-gray-900 text-white border-r border-gray-800' 
             : 'bg-white text-gray-900 border-r border-gray-200'
         }`}
+        style={{ height: '100vh', overflowY: 'auto' }}
       >
         {/* Logo */}
-        <div className={`p-6 border-b ${
+        <div className={`p-6 border-b flex-shrink-0 ${
           theme === 'dark' ? 'border-gray-800' : 'border-gray-200'
         }`}>
-          <Link to="/dashboard" className="flex items-center space-x-3 no-underline">
+          <Link to="/dashboard" className="flex items-center space-x-3 no-underline hover:opacity-90 transition-opacity">
             <div className="p-2 bg-blue-600 rounded-lg">
               <BellIcon className="h-6 w-6 text-white" />
             </div>
@@ -78,57 +108,57 @@ const Sidebar: React.FC = () => {
               <span className="text-xl font-bold text-primary">Customer Care</span>
               <p className={`text-sm ${
                 theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-              }`}>Customer Care</p>
+              }`}>Notification System</p>
             </div>
           </Link>
         </div>
 
-        {/* Menu items */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        {/* Menu items - scrollable area */}
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto flex-grow">
           {menuItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
               className={`w-full flex items-center space-x-3 p-3 rounded-lg transition-colors no-underline ${
                 isActive(item.path)
-                  ? 'bg-blue-600 text-white' 
+                  ? 'bg-blue-600 text-white shadow-md' 
                   : `${
                     theme === 'dark' 
                       ? 'text-gray-300 hover:bg-gray-800 hover:text-white' 
                       : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                   }`
               }`}
-              onClick={() => window.innerWidth < 1024 && setIsCollapsed(true)}
+              onClick={() => isMobile && setIsCollapsed(true)}
             >
-              <item.icon className="h-5 w-5" />
-              <span className="font-medium">{item.label}</span>
+              <item.icon className="h-5 w-5 flex-shrink-0" />
+              <span className="font-medium truncate">{item.label}</span>
             </Link>
           ))}
         </nav>
 
-        {/* User profile */}
-        <div className={`p-4 border-t ${
+        {/* User profile - fixed at bottom */}
+        <div className={`p-4 border-t flex-shrink-0 ${
           theme === 'dark' ? 'border-gray-800' : 'border-gray-200'
         }`}>
           <div className="flex items-center space-x-3">
-            <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center">
+            <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
               <span className="font-semibold text-white">A</span>
             </div>
-            <div className="flex-1">
-              <p className="font-medium text-primary">Admin User</p>
-              <p className={`text-sm ${
+            <div className="min-w-0">
+              <p className="font-medium text-primary truncate">Admin User</p>
+              <p className={`text-sm truncate ${
                 theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-              }`}>admin</p>
+              }`}>admin@example.com</p>
             </div>
           </div>
         </div>
       </aside>
 
       {/* Overlay for mobile */}
-      {isCollapsed && (
+      {!isCollapsed && isMobile && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
-          onClick={() => setIsCollapsed(false)}
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden transition-opacity duration-300"
+          onClick={() => setIsCollapsed(true)}
         />
       )}
     </>

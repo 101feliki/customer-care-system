@@ -21,36 +21,37 @@ export const useTheme = () => {
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(() => {
     // Check system preference first
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       return 'dark';
     }
     const savedTheme = localStorage.getItem('app-theme') as Theme;
-    return savedTheme || 'dark';
+    return savedTheme || 'light'; // Changed default to light
   });
 
   useEffect(() => {
+    // Save to localStorage
     localStorage.setItem('app-theme', theme);
     
-    // Apply theme to body and all elements
-    if (theme === 'dark') {
-      document.body.classList.add('dark-theme');
-      document.body.classList.remove('light-theme');
-    } else {
-      document.body.classList.add('light-theme');
-      document.body.classList.remove('dark-theme');
-    }
+    // Apply theme to body
+    document.body.classList.remove('light-theme', 'dark-theme');
+    document.body.classList.add(`${theme}-theme`);
     
-    // Also add class to root element
+    // Apply theme to html element
+    const html = document.documentElement;
+    html.classList.remove('light-theme', 'dark-theme');
+    html.classList.add(`${theme}-theme`);
+    html.setAttribute('data-theme', theme);
+    
+    // Also apply to root element
     const root = document.getElementById('root');
     if (root) {
-      if (theme === 'dark') {
-        root.classList.add('dark-theme');
-        root.classList.remove('light-theme');
-      } else {
-        root.classList.add('light-theme');
-        root.classList.remove('dark-theme');
-      }
+      root.classList.remove('light-theme', 'dark-theme');
+      root.classList.add(`${theme}-theme`);
     }
+    
+    // Update CSS variables for immediate effect
+    document.documentElement.style.setProperty('color-scheme', theme);
+    
   }, [theme]);
 
   const toggleTheme = () => {
