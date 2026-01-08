@@ -8,7 +8,7 @@ import { CountRecipientNotifications } from '@app/use-cases/count-recipient-noti
 import { GetRecipientNotifications } from '@app/use-cases/get-recipient-notifications';
 import { ReadNotification } from '@app/use-cases/read-notification';
 import { UnreadNotification } from '@app/use-cases/unread-notification';
-
+import { GetAllNotifications } from '@app/use-cases/get-all-notifications';
 @Module({
   imports: [DatabaseModule],
   controllers: [NotificationsController],
@@ -19,6 +19,7 @@ import { UnreadNotification } from '@app/use-cases/unread-notification';
     GetRecipientNotifications,
     ReadNotification,
     UnreadNotification,
+    GetAllNotifications, 
   ],
 })
 export class HttpModule {}

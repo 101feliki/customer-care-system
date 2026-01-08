@@ -61,4 +61,14 @@ export class PrismaNotificationsRepository implements NotificationsRepository {
       data: raw,
     });
   }
+  async findAll(): Promise<Notification[]> {
+  const notifications = await this.prisma.notification.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: {
+      recipient: true,
+    },
+  });
+  
+  return notifications.map(PrismaNotificationsMapper.toDomain);
+}
 }
