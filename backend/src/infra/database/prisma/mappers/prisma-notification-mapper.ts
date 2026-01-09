@@ -20,7 +20,7 @@ export class PrismaNotificationsMapper {
     };
   }
 
-  static toDomain(raw: RawNotification) {
+  static toDomain(raw: any) {
     return new Notification({
       category: raw.category,
       content: new Content(raw.content),
@@ -29,7 +29,7 @@ export class PrismaNotificationsMapper {
       status: raw.status,
       readAt: raw.readAt,
       canceledAt: raw.canceledAt,
-      bulkNotificationId: raw.bulkNotificationId ||undefined,
+      bulkNotificationId: raw.bulkNotificationId ,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
     }, raw.id);
