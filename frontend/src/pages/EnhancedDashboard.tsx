@@ -21,20 +21,29 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        setLoading(true);
-        const data = await notificationService.getNotifications();
-        setNotifications(data);
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchNotifications = async () => {
+  try {
+    setLoading(true);
+    // Use 'any' here temporarily to break the type deadlock
+    const data: any = await notificationService.getNotifications();
+    
+    // Check if it's the object structure { notifications: [] } 
+    // or if it's returning the array directly
+    if (data && data.notifications) {
+      setNotifications(data.notifications);
+    } else if (Array.isArray(data)) {
+      setNotifications(data);
+    }
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    setNotifications([]); 
+  } finally {
+    setLoading(false);
+  }
+};
 
-    fetchNotifications();
-  }, []);
+  fetchNotifications();
+}, []);
 
   const handleMarkAsRead = async (id: string) => {
     try {
@@ -140,7 +149,7 @@ const Dashboard: React.FC = () => {
                     onClick={() => setView('list')}
                     className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
                       view === 'list' 
-                        ? 'bg-blue-600 text-white' 
+                        ? 'bg-blue-900 text-white' 
                         : 'bg-hover text-primary hover:bg-opacity-80'
                     }`}
                   >

@@ -12,7 +12,7 @@ export interface NotificationProps {
   createdAt: Date;
   channel: string; // Required
   status?: string;
-  bulkNotificationId?: string;
+  bulkNotificationId?: string |null;
   updatedAt?: Date;
 }
 
@@ -103,11 +103,11 @@ export class Notification {
     return this.props.canceledAt;
   }
 
-  public get bulkNotificationId(): string | undefined {
+  public get bulkNotificationId(): string |null| undefined {
     return this.props.bulkNotificationId;
   }
 
-  public set bulkNotificationId(id: string | undefined) {
+  public set bulkNotificationId(id: string |null| undefined) {
     this.props.bulkNotificationId = id;
     this.props.updatedAt = new Date();
   }
