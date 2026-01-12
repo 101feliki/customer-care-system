@@ -117,7 +117,7 @@ const SettingsPage: React.FC = () => {
               {activeTab === 'general' && (
                 <section className="bg-card border border-color rounded-2xl p-8 shadow-sm">
                   <h3 className="text-lg font-bold text-primary mb-6 flex items-center">
-                    <PaintBrushIcon className="h-5 w-5 mr-2 text-blue-500" /> Appearance & Localization
+                    <PaintBrushIcon className="h-5 w-5 mr-2 text-blue-800" /> Appearance & Localization
                   </h3>
                   <div className="grid gap-6">
                     <div className="flex items-center justify-between p-4 rounded-xl bg-primary/50 border border-color">
@@ -155,7 +155,7 @@ const SettingsPage: React.FC = () => {
               {activeTab === 'notifications' && (
                 <section className="bg-card border border-color rounded-2xl p-8 shadow-sm animate-in fade-in duration-500">
                   <h3 className="text-lg font-bold text-primary mb-6 flex items-center">
-                    <BellIcon className="h-5 w-5 mr-2 text-blue-500" /> Communication Preferences
+                    <BellIcon className="h-5 w-5 mr-2 text-blue-800" /> Communication Preferences
                   </h3>
                   <div className="space-y-4">
                     {[
@@ -186,13 +186,13 @@ const SettingsPage: React.FC = () => {
               {activeTab === 'profile' && (
                 <section className="bg-card border border-color rounded-2xl p-8 shadow-sm animate-in fade-in duration-500">
                   <div className="flex items-center space-x-6 mb-8">
-                    <div className="h-20 w-20 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-3xl font-bold text-white shadow-xl shadow-blue-500/20">
+                    <div className="h-20 w-20 rounded-2xl bg-gradient-to-tr from-blue-800 to-indigo-600 flex items-center justify-center text-3xl font-bold text-white shadow-xl shadow-blue-500/20">
                       {user?.name?.charAt(0) || 'A'}
                     </div>
                     <div>
                       <h4 className="text-xl font-bold text-primary">{userProfile.name}</h4>
                       <p className="text-secondary text-sm">{userProfile.email}</p>
-                      <button className="mt-2 text-sm text-blue-500 font-semibold hover:underline">Change avatar</button>
+                      <button className="mt-2 text-sm text-blue-800 font-semibold hover:underline">Change avatar</button>
                     </div>
                   </div>
 

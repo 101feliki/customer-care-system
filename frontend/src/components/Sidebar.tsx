@@ -5,27 +5,19 @@ import {
   ArchiveBoxIcon, CogIcon, Bars3Icon, XMarkIcon, ArrowLeftOnRectangleIcon 
 } from '@heroicons/react/24/outline';
 import { useTheme } from '../contexts/ThemeContext';
-import { useAuth } from '../contexts/AuthContext'; // Import your auth hook
+import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar: React.FC = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isOpen, setIsOpen] = useState(false); // Mobile drawer state
   const { theme } = useTheme();
-  const { user, logout } = useAuth(); // Get user and logout function
+  const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Close sidebar automatically when navigating on mobile
   useEffect(() => {
-    const checkIfMobile = () => {
-      const mobile = window.innerWidth < 1024;
-      setIsMobile(mobile);
-      if (!mobile) setIsCollapsed(false);
-      else setIsCollapsed(true);
-    };
-    checkIfMobile();
-    window.addEventListener('resize', checkIfMobile);
-    return () => window.removeEventListener('resize', checkIfMobile);
-  }, []);
+    setIsOpen(false);
+  }, [location.pathname]);
 
   const menuItems = [
     { path: '/dashboard', icon: HomeIcon, label: 'Dashboard' },
@@ -45,49 +37,76 @@ const Sidebar: React.FC = () => {
 
   return (
     <>
-      {/* Mobile menu button code remains same... */}
+      {/* 1. MOBILE HAMBURGER BUTTON - Visible only on mobile/tablet */}
+      <div className="lg:hidden fixed top-4 left-4 z-50">
+        <button
+          onClick={() => setIsOpen(true)}
+          className={`p-2 rounded-lg shadow-lg ${
+            theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900 border'
+          }`}
+        >
+          <Bars3Icon className="h-6 w-6" />
+        </button>
+      </div>
 
-      <aside className={`fixed lg:static top-0 left-0 h-screen z-40 transition-transform duration-300 ease-in-out flex-shrink-0 ${
-          isCollapsed && isMobile ? '-translate-x-full' : 'translate-x-0'
-        } w-64 flex flex-col ${theme === 'dark' ? 'bg-gray-900 text-white border-r border-gray-800' : 'bg-white text-gray-900 border-r border-gray-200'}`}>
+      {/* 2. MOBILE OVERLAY - Click to close */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* 3. SIDEBAR ASIDE */}
+      <aside className={`
+        fixed lg:static top-0 left-0 h-screen z-50 transition-transform duration-300 ease-in-out flex-shrink-0
+        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} 
+        w-64 flex flex-col 
+        ${theme === 'dark' ? 'bg-gray-900 text-white border-r border-gray-800' : 'bg-white text-gray-900 border-r border-gray-200'}
+      `}>
         
-        {/* Logo Section */}
-        <div className={`p-6 border-b flex-shrink-0 ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
+        {/* Logo Section with Close Button for Mobile */}
+        <div className={`p-6 border-b flex items-center justify-between flex-shrink-0 ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
           <Link to="/dashboard" className="flex items-center space-x-3 no-underline">
             <div className="p-2 bg-blue-600 rounded-lg"><BellIcon className="h-6 w-6 text-white" /></div>
-            <div>
-              <span className="text-xl font-bold text-primary">Customer Care</span>
-            </div>
+            <span className="text-xl font-bold text-primary">CareHub</span>
           </Link>
+          
+          {/* Close button - Only visible on mobile */}
+          <button onClick={() => setIsOpen(false)} className="lg:hidden p-1 text-gray-400 hover:text-primary">
+            <XMarkIcon className="h-6 w-6" />
+          </button>
         </div>
 
         {/* Navigation Items */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {menuItems.map((item) => (
-            <Link key={item.path} to={item.path} className={`w-full flex items-center space-x-3 p-3 rounded-lg no-underline ${
-                isActive(item.path) ? 'bg-blue-600 text-white' : (theme === 'dark' ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100')
+            <Link key={item.path} to={item.path} className={`w-full flex items-center space-x-3 p-3 rounded-lg no-underline transition-colors ${
+                isActive(item.path) 
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' 
+                  : (theme === 'dark' ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100')
               }`}>
               <item.icon className="h-5 w-5" />
-              <span>{item.label}</span>
+              <span className="font-medium">{item.label}</span>
             </Link>
           ))}
         </nav>
 
-        {/* Updated User profile with REAL AUTH DATA */}
+        {/* User profile section */}
         <div className={`p-4 border-t ${theme === 'dark' ? 'border-gray-800' : 'border-gray-200'}`}>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between p-2 rounded-xl bg-opacity-50">
             <div className="flex items-center space-x-3 min-w-0">
-              <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold">
+              <div className="h-9 w-9 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold flex-shrink-0">
                 {user?.name?.charAt(0) || 'U'}
               </div>
               <div className="min-w-0">
-                <p className="font-medium text-primary truncate text-sm">{user?.name || 'User'}</p>
-                <p className="text-xs text-secondary truncate">{user?.email || 'Logged in'}</p>
+                <p className="font-semibold text-primary truncate text-sm leading-tight">{user?.name || 'User'}</p>
+                <p className="text-[10px] text-secondary truncate uppercase tracking-wider font-bold">Admin Account</p>
               </div>
             </div>
             <button 
               onClick={handleLogout}
-              className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
               title="Logout"
             >
               <ArrowLeftOnRectangleIcon className="h-5 w-5" />
