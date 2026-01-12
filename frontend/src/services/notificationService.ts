@@ -1,7 +1,6 @@
 import axios from 'axios';
-import { authService } from './authService';
 
-const API_BASE_URL = 'http://localhost:3001'; // Nest.js backend URL
+const API_BASE_URL = 'http://localhost:3001'; 
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -10,11 +9,14 @@ const api = axios.create({
   },
 });
 
-// REQUEST INTERCEPTOR: Automatically attach JWT token to every request
+// interceptor to attach token from localStorage (managed by your AuthContext)
 api.interceptors.request.use((config) => {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  if (user.token) {
-    config.headers.Authorization = `Bearer ${user.token}`;
+  const userData = localStorage.getItem('user');
+  if (userData) {
+    const user = JSON.parse(userData);
+    if (user?.token) {
+      config.headers.Authorization = `Bearer ${user.token}`;
+    }
   }
   return config;
 });
@@ -29,43 +31,28 @@ export interface Notification {
   canceledAt: Date | null;
 }
 
-// ... (CreateNotificationDto, Template, SendNotificationDto interfaces remain same)
+// ... (Template, SendNotificationDto interfaces remain the same)
 
 class NotificationService {
-  // Mock data preserved for fallback
   private mockNotifications: Notification[] = [
-    { id: '1', recipientId: 'user-123', content: 'Welcome to our customer care service!', category: 'email', readAt: null, createdAt: new Date('2024-01-15T10:30:00'), canceledAt: null },
-    // ... other mock items
+    { id: '1', recipientId: 'user-123', content: 'Welcome!', category: 'email', readAt: null, createdAt: new Date(), canceledAt: null },
   ];
 
-  private mockTemplates: Template[] = [
-    { id: '1', name: 'Welcome Email', category: 'email', content: 'Welcome {name}!', variables: ['name'], lastUsed: 'Today', usageCount: 45 },
-    // ... other mock templates
-  ];
+  /**
+   * THE FIX: This handles the "notifications.filter is not a function" error
+   */
+  private handleResponse(response: any): any[] {
+    // 1. Check if response exists
+    if (!response || !response.data) return [];
 
-  // Helper to safely handle API responses and ensure they are arrays
-  private handleResponse(response: any) {
-    return Array.isArray(response.data) ? response.data : response.data.data || [];
-  }
+    // 2. Check if data is directly an array
+    if (Array.isArray(response.data)) return response.data;
 
-  async getTemplates(): Promise<Template[]> {
-    try {
-      const response = await api.get('/templates');
-      return this.handleResponse(response);
-    } catch (error) {
-      console.log('API not available, using mock templates');
-      return this.mockTemplates;
-    }
-  }
+    // 3. Check if data is nested (common in NestJS/Pagination)
+    if (response.data.data && Array.isArray(response.data.data)) return response.data.data;
+    if (response.data.notifications && Array.isArray(response.data.notifications)) return response.data.notifications;
 
-  async sendNotification(data: SendNotificationDto): Promise<Notification[]> {
-    try {
-      const response = await api.post('/notifications/send', data);
-      return this.handleResponse(response);
-    } catch (error) {
-      // Mock logic remains same
-      return []; 
-    }
+    return [];
   }
 
   async getNotifications(): Promise<Notification[]> {
@@ -73,7 +60,7 @@ class NotificationService {
       const response = await api.get('/notifications');
       return this.handleResponse(response);
     } catch (error) {
-      console.log('API not available, using mock data');
+      console.error('API Error, falling back to mocks:', error);
       return this.mockNotifications;
     }
   }
@@ -83,9 +70,9 @@ class NotificationService {
       const response = await api.patch(`/notifications/${id}/read`);
       return response.data;
     } catch (error) {
-      const notification = this.mockNotifications.find(n => n.id === id);
-      if (notification) notification.readAt = new Date();
-      return notification as Notification;
+      const n = this.mockNotifications.find(m => m.id === id);
+      if (n) n.readAt = new Date();
+      return n as Notification;
     }
   }
 
@@ -94,9 +81,9 @@ class NotificationService {
       const response = await api.delete(`/notifications/${id}`);
       return response.data;
     } catch (error) {
-      const notification = this.mockNotifications.find(n => n.id === id);
-      if (notification) notification.canceledAt = new Date();
-      return notification as Notification;
+      const n = this.mockNotifications.find(m => m.id === id);
+      if (n) n.canceledAt = new Date();
+      return n as Notification;
     }
   }
 }
