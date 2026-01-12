@@ -8,6 +8,7 @@ import notificationService, { Notification } from '../services/notificationServi
 
 const NotificationsPage: React.FC = () => {
   const { theme } = useTheme();
+  // Ensure we initialize with an empty array
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [starredNotifications, setStarredNotifications] = useState<Set<string>>(new Set());
@@ -23,10 +24,18 @@ const NotificationsPage: React.FC = () => {
     const loadNotifications = async () => {
       try {
         setLoading(true);
-        const data = await notificationService.getNotifications();
+        const response = await notificationService.getNotifications();
+        
+        /**
+         * FIX: Robust data check. 
+         * If the backend returns { data: [] } instead of just [], 
+         * this ensures we always set an array to state.
+         */
+        const data = Array.isArray(response) ? response : (response as any)?.data || [];
         setNotifications(data);
       } catch (error) {
         console.error('Error loading notifications:', error);
+        setNotifications([]); // Fallback to empty array on error
       } finally {
         setLoading(false);
       }
@@ -38,7 +47,7 @@ const NotificationsPage: React.FC = () => {
   const handleMarkAsRead = async (id: string) => {
     try {
       await notificationService.markAsRead(id);
-      setNotifications(prev => prev.map(n => 
+      setNotifications(prev => (Array.isArray(prev) ? prev : []).map(n => 
         n.id === id ? { ...n, readAt: new Date() } : n
       ));
     } catch (error) {
@@ -49,7 +58,7 @@ const NotificationsPage: React.FC = () => {
   const handleCancel = async (id: string) => {
     try {
       await notificationService.cancelNotification(id);
-      setNotifications(prev => prev.map(n => 
+      setNotifications(prev => (Array.isArray(prev) ? prev : []).map(n => 
         n.id === id ? { ...n, canceledAt: new Date() } : n
       ));
     } catch (error) {
@@ -73,7 +82,13 @@ const NotificationsPage: React.FC = () => {
     console.log('Archiving notification:', id);
   };
 
-  const filteredNotifications = notifications.filter(notification => {
+  /**
+   * FIX: Added safe array check before filtering to prevent 
+   * "notifications.filter is not a function"
+   */
+  const safeNotifications = Array.isArray(notifications) ? notifications : [];
+
+  const filteredNotifications = safeNotifications.filter(notification => {
     if (filters.category !== 'all' && notification.category !== filters.category) {
       return false;
     }
@@ -86,10 +101,10 @@ const NotificationsPage: React.FC = () => {
   });
 
   const stats = {
-    total: notifications.length,
-    unread: notifications.filter(n => !n.readAt).length,
+    total: safeNotifications.length,
+    unread: safeNotifications.filter(n => !n.readAt).length,
     starred: starredNotifications.size,
-    cancelled: notifications.filter(n => n.canceledAt).length,
+    cancelled: safeNotifications.filter(n => n.canceledAt).length,
   };
 
   return (
@@ -158,16 +173,16 @@ const NotificationsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Notifications */}
+          {/* Notifications Container */}
           <div className="bg-card rounded-xl shadow-sm p-6 border border-color">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-primary">
                 Notifications ({filteredNotifications.length})
               </h2>
               <div className="text-sm text-secondary">
-                {filteredNotifications.length === notifications.length 
+                {filteredNotifications.length === safeNotifications.length 
                   ? 'Showing all notifications' 
-                  : `Filtered: ${filteredNotifications.length} of ${notifications.length}`
+                  : `Filtered: ${filteredNotifications.length} of ${safeNotifications.length}`
                 }
               </div>
             </div>
