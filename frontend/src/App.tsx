@@ -1,13 +1,14 @@
 ﻿import React, { useEffect } from 'react';
 import AppRouter from './AppRouter';
+import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext'; // Ensure ThemeProvider is also here
 import './index.css';
 
 function App() {
   useEffect(() => {
     // Set the base font size for consistent scaling
-    document.documentElement.style.fontSize = 'px';
+    document.documentElement.style.fontSize = '16px'; // Added 16 here to fix the empty px
     
-    // Remove any existing viewport meta
     const existingMeta = document.querySelector('meta[name="viewport"]');
     if (existingMeta) {
       existingMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
@@ -16,7 +17,12 @@ function App() {
 
   return (
     <div className="App layout-container">
-      <AppRouter />
+      {/* FIX: Wrap the Router inside the Provider */}
+      <AuthProvider>
+        <ThemeProvider> 
+          <AppRouter />
+        </ThemeProvider>
+      </AuthProvider>
     </div>
   );
 }
