@@ -10,11 +10,14 @@ import TemplatesPage from './pages/TemplatesPage';
 import SendNotificationPage from './pages/SendNotificationPage';
 import SettingsPage from './pages/settingsPage';
 
+import LoginPage from './pages/LoginPage';  
+
 const AppRouter: React.FC = () => {
   return (
     <ThemeProvider>
       {/* No BrowserRouter wrapper here */}
       <Routes>
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/notifications" element={<NotificationsPage />} />

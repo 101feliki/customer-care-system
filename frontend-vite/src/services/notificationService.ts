@@ -11,12 +11,10 @@ const api = axios.create({
 
 // interceptor to attach token from localStorage (managed by your AuthContext)
 api.interceptors.request.use((config) => {
-  const userData = localStorage.getItem('user');
-  if (userData) {
-    const user = JSON.parse(userData);
-    if (user?.token) {
-      config.headers.Authorization = `Bearer ${user.token}`;
-    }
+  const token = localStorage.getItem('token'); // Change this line
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  
   }
   return config;
 });
