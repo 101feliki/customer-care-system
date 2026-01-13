@@ -71,13 +71,7 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, setFilters }) => {
             ))}
           </select>
 
-          <button
-            onClick={() => setFilters({ category: 'all', status: 'all', dateRange: 'today', search: '' })}
-            className="btn bg-card border border-color hover:bg-hover text-primary"
-          >
-            <FunnelIcon className="h-3 w-4 mr-1" />
-            Clear Filters
-          </button>
+          
         </div>
       </div>
     </div>
