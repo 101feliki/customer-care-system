@@ -9,8 +9,9 @@ import { GetRecipientNotifications } from '@app/use-cases/get-recipient-notifica
 import { ReadNotification } from '@app/use-cases/read-notification';
 import { UnreadNotification } from '@app/use-cases/unread-notification';
 import { GetAllNotifications } from '@app/use-cases/get-all-notifications';
+import { AppModule } from '../../app.module'; 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule,AppModule],
   controllers: [NotificationsController],
   providers: [
     SendNotification,

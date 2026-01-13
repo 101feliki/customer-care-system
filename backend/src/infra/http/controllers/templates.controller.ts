@@ -1,5 +1,33 @@
-import { Controller, Get, Post, Body, Param, Put, Delete } from '@nestjs/common';
+import { 
+  Controller, 
+  Get, 
+  Post, 
+  Body, 
+  Param, 
+  Put, 
+  Delete,
+  ValidationPipe,
+  UsePipes,
+  BadRequestException 
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
+
+// DTOs for validation
+class CreateTemplateDto {
+  name: string;
+  subject: string;
+  htmlBody: string;
+  textBody?: string;
+  variables?: string[];
+}
+
+class UpdateTemplateDto {
+  name?: string;
+  subject?: string;
+  htmlBody?: string;
+  textBody?: string;
+  variables?: string[];
+}
 
 @Controller('templates')
 export class TemplatesController {
@@ -22,13 +50,18 @@ export class TemplatesController {
   }
 
   @Post()
-  async create(@Body() data: any) {
+  async create(@Body() data: CreateTemplateDto) {
+    // Validate required fields
+    if (!data.subject || !data.htmlBody) {
+      throw new BadRequestException('Subject and htmlBody are required');
+    }
+
     const template = await this.prisma.emailTemplate.create({
       data: {
         name: data.name,
         subject: data.subject,
         htmlBody: data.htmlBody,
-        textBody: data.textBody,
+        textBody: data.textBody || null,
         variables: data.variables || [],
       },
     });
@@ -36,10 +69,16 @@ export class TemplatesController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() data: any) {
+  async update(@Param('id') id: string, @Body() data: UpdateTemplateDto) {
     const template = await this.prisma.emailTemplate.update({
       where: { id },
-      data,
+      data: {
+        ...(data.name && { name: data.name }),
+        ...(data.subject && { subject: data.subject }),
+        ...(data.htmlBody && { htmlBody: data.htmlBody }),
+        ...(data.textBody !== undefined && { textBody: data.textBody }),
+        ...(data.variables && { variables: data.variables }),
+      },
     });
     return { template };
   }
