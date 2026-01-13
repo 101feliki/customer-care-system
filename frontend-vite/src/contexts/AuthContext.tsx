@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 // 1. Add 'token' to the Interface
 interface AuthContextType {
   user: any | null;
-  token: string | null; // <--- This was missing
+  token: string | null;
   login: (token: string, userData: any) => void;
   logout: () => void;
 }
@@ -17,9 +17,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
-    if (storedToken && storedUser) {
+    
+    if (storedToken) {
       setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+      
+      // Safely parse storedUser
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+        } catch (error) {
+          console.error('Failed to parse stored user data:', error);
+          // Clear corrupted data
+          localStorage.removeItem('user');
+        }
+      }
     }
   }, []);
 
@@ -37,7 +49,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('user');
   };
 
-  // 2. Pass 'token' in the value object
   return (
     <AuthContext.Provider value={{ user, token, login, logout }}>
       {children}

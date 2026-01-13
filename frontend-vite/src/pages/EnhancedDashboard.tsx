@@ -32,8 +32,8 @@ const Dashboard: React.FC = () => {
   
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
+  const [showUserMenu ] = useState(false);
+  const [showSearch] = useState(false);
 
   useEffect(() => {
     const fetchNotifications = async () => {

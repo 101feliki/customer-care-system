@@ -59,7 +59,7 @@ const Sidebar: React.FC = () => {
 
       {/* 3. SIDEBAR ASIDE */}
       <aside className={`
-        fixed lg:static top-0 left-0 h-screen z-50 transition-transform duration-300 ease-in-out flex-shrink-0
+        fixed lg:static top-0 left-0 h-screen z-50 transition-transform duration-300 ease-in-out shrink-0
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} 
         w-64 flex flex-col 
         ${theme === 'dark' ? 'bg-theme-primary text-theme-primary' : 'bg-white text-theme-primary'} 
@@ -67,7 +67,7 @@ const Sidebar: React.FC = () => {
       `}>
         
         {/* Logo Section with Close Button for Mobile */}
-        <div className={`p-6 border-b border-theme flex items-center justify-between flex-shrink-0`}>
+        <div className={`p-6 border-b border-theme flex items-center justify-between shrink-0`}>
           <Link to="/dashboard" className="flex items-center space-x-3 no-underline">
             <div className="p-2 bg-blue-600 rounded-lg"><BellIcon className="h-6 w-6 text-white" /></div>
             <span className="text-xl font-bold text-theme-primary">CareHub</span>
@@ -99,7 +99,7 @@ const Sidebar: React.FC = () => {
             theme === 'dark' ? 'bg-card-bg' : 'bg-gray-50'
           } bg-opacity-50`}>
             <div className="flex items-center space-x-3 min-w-0">
-              <div className="h-9 w-9 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold flex-shrink-0">
+              <div className="h-9 w-9 rounded-lg bg-linear-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold shrink-0">
                 {user?.name?.charAt(0) || 'U'}
               </div>
               <div className="min-w-0">
