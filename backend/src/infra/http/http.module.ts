@@ -9,9 +9,10 @@ import { GetRecipientNotifications } from '@app/use-cases/get-recipient-notifica
 import { ReadNotification } from '@app/use-cases/read-notification';
 import { UnreadNotification } from '@app/use-cases/unread-notification';
 import { GetAllNotifications } from '@app/use-cases/get-all-notifications';
-import { AppModule } from '../../app.module'; 
+import { MailerService } from '../mail/mailer.service'; // Direct import
+
 @Module({
-  imports: [DatabaseModule,AppModule],
+  imports: [DatabaseModule], // ONLY DatabaseModule, NOT AppModule
   controllers: [NotificationsController],
   providers: [
     SendNotification,
@@ -20,7 +21,8 @@ import { AppModule } from '../../app.module';
     GetRecipientNotifications,
     ReadNotification,
     UnreadNotification,
-    GetAllNotifications, 
+    GetAllNotifications,
+    MailerService, // Add MailerService here
   ],
 })
 export class HttpModule {}
