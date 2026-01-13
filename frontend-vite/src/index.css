@@ -33,24 +33,24 @@ html, body, #root, .App {
 
 /* Light Theme - Creamy White */
 .light-theme {
-  --primary-bg: #f8fafc;
+  --primary-bg: #f9f9f9fd;
   --secondary-bg: #ffffff;
-  --text-primary: #1e293b;
+  --text-primary: #151d2c;
   --text-secondary: #475569;
   --border-color: #e2e8f0;
   --card-bg: #ffffff;
-  --hover-bg: #f1f5f9;
+  --hover-bg: #ffffff;
   --color-scheme: light;
 }
 
 /* Dark Theme - Dark Blue */
 .dark-theme {
-  --primary-bg: #0f172a;
-  --secondary-bg: #1e293b;
+  --primary-bg: #161c2b;
+  --secondary-bg: #1c2128;
   --text-primary: #f1f5f9;
   --text-secondary: #cbd5e1;
-  --border-color: #334155;
-  --card-bg: #1e293b;
+  --border-color: #21262c;
+  --card-bg: #272e39;
   --hover-bg: #334155;
   --color-scheme: dark;
 }
