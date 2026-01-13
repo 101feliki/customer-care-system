@@ -111,7 +111,7 @@ const TemplatesPage: React.FC = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-card border-b border-color px-6 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-primary">Templates</h1>
-          <button onClick={() => openModal()} className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center">
+          <button onClick={() => openModal()} className="px-4 py-2 bg-blue-700 text-white rounded-lg flex items-center">
             <PlusIcon className="h-5 w-5 mr-2" /> Create Template
           </button>
         </header>

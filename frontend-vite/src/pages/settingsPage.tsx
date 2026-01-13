@@ -9,7 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 
 const SettingsPage: React.FC = () => {
-  const { theme, toggleTheme } = useTheme();
+  
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('general');
   const [saving, setSaving] = useState(false);
@@ -40,7 +40,7 @@ const SettingsPage: React.FC = () => {
   };
 
   const tabs = [
-    { id: 'general', label: 'General', icon: CogIcon },
+   
     { id: 'notifications', label: 'Notifications', icon: BellIcon },
     { id: 'profile', label: 'Profile', icon: UserIcon }
   ];
@@ -58,11 +58,11 @@ const SettingsPage: React.FC = () => {
               <div>
                 {/* Breadcrumb Navigation Style */}
                 <div className="flex items-center text-sm text-secondary mb-1">
-                  <span>Dashboard</span>
+                
                   <ChevronRightIcon className="h-3 w-3 mx-2" />
-                  <span className="text-blue-500 font-medium">Settings</span>
+                  <span className="text-blue-700 font-medium">Settings</span>
                 </div>
-                <h1 className="text-2xl font-bold text-primary">Configuration</h1>
+                
               </div>
               
               <div className="flex items-center space-x-4">
@@ -114,43 +114,7 @@ const SettingsPage: React.FC = () => {
 
             {/* Content Area */}
             <div className="lg:col-span-9 space-y-6 pb-12">
-              {activeTab === 'general' && (
-                <section className="bg-card border border-color rounded-2xl p-8 shadow-sm">
-                  <h3 className="text-lg font-bold text-primary mb-6 flex items-center">
-                    <PaintBrushIcon className="h-5 w-5 mr-2 text-blue-800" /> Appearance & Localization
-                  </h3>
-                  <div className="grid gap-6">
-                    <div className="flex items-center justify-between p-4 rounded-xl bg-primary/50 border border-color">
-                      <div>
-                        <p className="font-semibold text-primary">Interface Theme</p>
-                        <p className="text-sm text-secondary">Switch between light and dark mode</p>
-                      </div>
-                      <button onClick={toggleTheme} className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium">
-                        Toggle to {theme === 'light' ? 'Dark' : 'Light'}
-                      </button>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-secondary ml-1">Timezone</label>
-                        <select className="w-full bg-primary border border-color rounded-xl p-3 text-primary focus:ring-2 focus:ring-blue-500 outline-none">
-                          <option>America/New_York (GMT-5)</option>
-                          <option>Europe/London (GMT+0)</option>
-                          <option>Asia/Tokyo (GMT+9)</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-secondary ml-1">Language</label>
-                        <select className="w-full bg-primary border border-color rounded-xl p-3 text-primary focus:ring-2 focus:ring-blue-500 outline-none">
-                          <option>English (US)</option>
-                          <option>Spanish (ES)</option>
-                          <option>French (FR)</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              )}
+              
 
               {activeTab === 'notifications' && (
                 <section className="bg-card border border-color rounded-2xl p-8 shadow-sm animate-in fade-in duration-500">
