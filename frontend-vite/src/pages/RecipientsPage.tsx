@@ -12,6 +12,7 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   EyeIcon,
+  XMarkIcon,
   EyeSlashIcon
 } from '@heroicons/react/24/outline';
 
@@ -285,7 +286,7 @@ const RecipientsPage: React.FC = () => {
       <Sidebar />
       
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <header className="bg-card border-b border-color flex-shrink-0 sticky top-0 z-20">
+        <header className="bg-card border-b border-color shrink-0 sticky top-0 z-20">
           <div className="px-6 py-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
@@ -309,7 +310,7 @@ const RecipientsPage: React.FC = () => {
                       resetForm();
                       setShowAddModal(true);
                     }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
+                    className="px-2 py-1 bg-blue-800 text-white rounded-lg hover:bg-blue-700 flex items-center"
                   >
                     <PlusIcon className="h-5 w-5 mr-2" />
                     Add Recipient
@@ -494,18 +495,12 @@ const RecipientsPage: React.FC = () => {
 
       {/* Add Recipient Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card rounded-xl shadow-lg max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-6">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="px-8 py-4 border-b border-color flex justify-between items-center bg-blue-500 dark:bg-blue-800/50">
               <h2 className="text-xl font-bold text-primary">Add New Recipient</h2>
-              <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  resetForm();
-                }}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
+              <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-200 rounded-full">
+                <XMarkIcon className="h-6 w-6 text-secondary" />
               </button>
             </div>
             
@@ -519,7 +514,7 @@ const RecipientsPage: React.FC = () => {
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                   placeholder="Enter recipient name"
-                  className={`w-full p-2 rounded-lg border ${
+                  className={`w-4/5 mx-auto p-1 rounded-lg border ${
                     theme === 'dark' 
                       ? 'bg-gray-700 border-gray-600 text-white' 
                       : 'bg-white border-gray-300 text-gray-900'
@@ -536,7 +531,7 @@ const RecipientsPage: React.FC = () => {
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                   placeholder="Enter email address"
-                  className={`w-full p-2 rounded-lg border ${
+                  className={`w-4/5 mx-auto p-1 rounded-lg border ${
                     theme === 'dark' 
                       ? 'bg-gray-700 border-gray-600 text-white' 
                       : 'bg-white border-gray-300 text-gray-900'
@@ -553,7 +548,7 @@ const RecipientsPage: React.FC = () => {
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
                   placeholder="Enter phone number"
-                  className={`w-full p-2 rounded-lg border ${
+                  className={`w-4/5 p-2 rounded-lg border ${
                     theme === 'dark' 
                       ? 'bg-gray-700 border-gray-600 text-white' 
                       : 'bg-white border-gray-300 text-gray-900'
@@ -568,7 +563,7 @@ const RecipientsPage: React.FC = () => {
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({...formData, status: e.target.value as any})}
-                  className={`w-full p-2 rounded-lg border ${
+                  className={`w-4/5 p-2 rounded-lg border ${
                     theme === 'dark' 
                       ? 'bg-gray-700 border-gray-600 text-white' 
                       : 'bg-white border-gray-300 text-gray-900'
@@ -587,14 +582,14 @@ const RecipientsPage: React.FC = () => {
                   setShowAddModal(false);
                   resetForm();
                 }}
-                className="px-4 py-2 border border-color rounded-lg hover:bg-hover text-primary"
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddRecipient}
                 disabled={!formData.name || !formData.email}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Add Recipient
               </button>
@@ -605,18 +600,13 @@ const RecipientsPage: React.FC = () => {
 
       {/* Edit Recipient Modal */}
       {showEditModal && selectedRecipient && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card rounded-xl shadow-lg max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-6">
+        <div className="fixed inset-0 bg-black/60  backdrop-blur-sm z-50  flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="px-8 py-4 border-b border-color flex justify-between items-center bg-blue-500 dark:bg-blue-800/50">
               <h2 className="text-xl font-bold text-primary">Edit Recipient</h2>
-              <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  resetForm();
-                }}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
+             
+              <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-400 rounded-full">
+                <XMarkIcon className="h-6 w-6 text-secondary" />
               </button>
             </div>
             
@@ -629,7 +619,7 @@ const RecipientsPage: React.FC = () => {
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className={`w-full p-2 rounded-lg border ${
+                  className={`w-4/5 p-2 rounded-lg border ${
                     theme === 'dark' 
                       ? 'bg-gray-700 border-gray-600 text-white' 
                       : 'bg-white border-gray-300 text-gray-900'
@@ -645,7 +635,7 @@ const RecipientsPage: React.FC = () => {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className={`w-full p-2 rounded-lg border ${
+                  className={`w-4/5 p-2 rounded-lg border ${
                     theme === 'dark' 
                       ? 'bg-gray-700 border-gray-600 text-white' 
                       : 'bg-white border-gray-300 text-gray-900'
@@ -661,7 +651,7 @@ const RecipientsPage: React.FC = () => {
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  className={`w-full p-2 rounded-lg border ${
+                  className={`w-4/5 p-2 rounded-lg border ${
                     theme === 'dark' 
                       ? 'bg-gray-700 border-gray-600 text-white' 
                       : 'bg-white border-gray-300 text-gray-900'
@@ -676,7 +666,7 @@ const RecipientsPage: React.FC = () => {
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({...formData, status: e.target.value as any})}
-                  className={`w-full p-2 rounded-lg border ${
+                  className={`w-4/5 p-2 rounded-lg border ${
                     theme === 'dark' 
                       ? 'bg-gray-700 border-gray-600 text-white' 
                       : 'bg-white border-gray-300 text-gray-900'
@@ -687,11 +677,7 @@ const RecipientsPage: React.FC = () => {
                   <option value="blocked">Blocked</option>
                 </select>
               </div>
-              
-              <div className="text-sm text-secondary">
-                <p>Created: {selectedRecipient.createdAt}</p>
-                <p>Last Updated: {selectedRecipient.updatedAt}</p>
-              </div>
+             
             </div>
             
             <div className="mt-6 flex justify-end space-x-3">
@@ -700,14 +686,14 @@ const RecipientsPage: React.FC = () => {
                   setShowEditModal(false);
                   resetForm();
                 }}
-                className="px-4 py-2 border border-color rounded-lg hover:bg-hover text-primary"
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={handleEditRecipient}
                 disabled={!formData.name || !formData.email}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-8 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Update Recipient
               </button>
@@ -718,11 +704,11 @@ const RecipientsPage: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && selectedRecipient && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-card rounded-xl shadow-lg max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50  flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
             <div className="flex flex-col items-center">
               <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center mb-4">
-                <TrashIcon className="h-6 w-6 text-red-600 dark:text-red-300" />
+                <TrashIcon className="h-6 w-6 text-red-800 dark:text-red-200" />
               </div>
               <h3 className="text-lg font-bold text-primary mb-2">Delete Recipient</h3>
               <p className="text-secondary text-center mb-4">
@@ -735,7 +721,7 @@ const RecipientsPage: React.FC = () => {
                     setShowDeleteModal(false);
                     setSelectedRecipient(null);
                   }}
-                  className="px-4 py-2 border border-color rounded-lg hover:bg-hover text-primary"
+                  className="px-4 py-2 border border-color   text-white rounded-lg hover:bg-hover text-primary"
                 >
                   Cancel
                 </button>

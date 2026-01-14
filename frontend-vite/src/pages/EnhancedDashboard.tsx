@@ -8,11 +8,6 @@ import { useTheme } from '../contexts/ThemeContext';
 import notificationService, { Notification } from '../services/notificationService';
 import { 
   Bell, 
-  Search, 
-  User, 
-  ChevronDown,
-  Calendar,
-  Eye,
   EyeOff,
   Star,
   XCircle
@@ -138,7 +133,7 @@ const Dashboard: React.FC = () => {
     cancelled: notifications.filter(n => n.canceledAt).length,
   };
 
-  // Simple notification categories
+  
   
 
   return (
@@ -149,7 +144,7 @@ const Dashboard: React.FC = () => {
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Simplified Professional Header */}
         <header className="bg-card border-b border-color sticky top-0 z-30">
-          <div className="px-6 py-4">
+          <div className="px-6 py-1">
             {/* Top Row: Title and Actions */}
             <div className="flex items-center justify-between mb-4">
               {/* Left: Title */}
@@ -170,25 +165,8 @@ const Dashboard: React.FC = () => {
 
                 {/* User Profile */}
                 <div className="relative">
-                  
 
-                  {/* User Dropdown */}
-                  {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-48 bg-card border border-color rounded-lg shadow-lg py-1 z-50">
-                      <div className="px-4 py-3 border-b border-color">
-                        <div className="text-sm font-medium text-primary">Admin User</div>
-                        <div className="text-xs text-secondary">admin@example.com</div>
-                      </div>
-                      <button className="w-full px-4 py-2 text-sm text-left text-primary hover:bg-secondary transition-colors">
-                        Profile Settings
-                      </button>
-                      <div className="border-t border-color mt-1 pt-1">
-                        <button className="w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                          Logout
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                 
                 </div>
               </div>
             </div>

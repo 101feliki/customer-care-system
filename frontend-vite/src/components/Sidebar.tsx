@@ -2,7 +2,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   BellIcon, HomeIcon, UserGroupIcon, DocumentTextIcon, 
-  ArchiveBoxIcon, CogIcon, Bars3Icon, XMarkIcon, ArrowLeftOnRectangleIcon 
+   CogIcon, Bars3Icon, XMarkIcon, ArrowLeftOnRectangleIcon 
 } from '@heroicons/react/24/outline';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -24,7 +24,7 @@ const Sidebar: React.FC = () => {
     { path: '/notifications', icon: BellIcon, label: 'Notifications' },
     { path: '/recipients', icon: UserGroupIcon, label: 'Recipients' },
     { path: '/templates', icon: DocumentTextIcon, label: 'Templates' },
-    { path: '/archive', icon: ArchiveBoxIcon, label: 'Archive' },
+    
     { path: '/settings', icon: CogIcon, label: 'Settings' },
   ];
 
@@ -38,7 +38,7 @@ const Sidebar: React.FC = () => {
   return (
     <>
       {/* 1. MOBILE HAMBURGER BUTTON - Visible only on mobile/tablet */}
-      <div className="lg:hidden fixed top-4 left-4 z-50">
+      <div className="lg:hidden fixed top-11 left-4 z-50">
         <button
           onClick={() => setIsOpen(true)}
           className={`p-2 rounded-lg shadow-lg ${
@@ -69,12 +69,12 @@ const Sidebar: React.FC = () => {
         {/* Logo Section with Close Button for Mobile */}
         <div className={`p-6 border-b border-theme flex items-center justify-between shrink-0`}>
           <Link to="/dashboard" className="flex items-center space-x-3 no-underline">
-            <div className="p-2 bg-blue-600 rounded-lg"><BellIcon className="h-6 w-6 text-white" /></div>
-            <span className="text-xl font-bold text-theme-primary">CareHub</span>
+            <div className="p-2 bg-blue-800 rounded-lg"><BellIcon className="h-6 w-6 text-white" /></div>
+            <span className="text-xl font-bold text-theme-primary">Customer Care</span>
           </Link>
           
           {/* Close button - Only visible on mobile */}
-          <button onClick={() => setIsOpen(false)} className="lg:hidden p-1 text-gray-400 hover:text-blue-600">
+          <button onClick={() => setIsOpen(false)} className="lg:hidden p-1 text-gray-400 hover:text-blue-800">
             <XMarkIcon className="h-6 w-6" />
           </button>
         </div>
@@ -84,7 +84,7 @@ const Sidebar: React.FC = () => {
           {menuItems.map((item) => (
             <Link key={item.path} to={item.path} className={`w-full flex items-center space-x-3 p-3 rounded-lg no-underline transition-colors ${
                 isActive(item.path) 
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' 
+                  ? 'bg-blue-800 text-white shadow-md shadow-blue-600/20' 
                   : (theme === 'dark' ? 'text-theme-secondary hover:bg-hover-bg' : 'text-theme-secondary hover:bg-gray-100')
               }`}>
               <item.icon className="h-5 w-5" />
@@ -99,12 +99,12 @@ const Sidebar: React.FC = () => {
             theme === 'dark' ? 'bg-card-bg' : 'bg-gray-50'
           } bg-opacity-50`}>
             <div className="flex items-center space-x-3 min-w-0">
-              <div className="h-9 w-9 rounded-lg bg-linear-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold shrink-0">
+              <div className="h-9 w-9 rounded-lg bg-linear-to-tr from-blue-800 to-blue-800 flex items-center justify-center text-white font-bold shrink-0">
                 {user?.name?.charAt(0) || 'U'}
               </div>
               <div className="min-w-0">
                 <p className="font-semibold text-theme-primary truncate text-sm leading-tight">{user?.name || 'User'}</p>
-                <p className="text-[10px] text-theme-secondary truncate uppercase tracking-wider font-bold">Admin Account</p>
+                <p className="text-[10px] text-theme-secondary truncate uppercase tracking-wider font-bold"></p>
               </div>
             </div>
             <button 

@@ -7,24 +7,69 @@ const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
     
-    // Simulate API login
-    setTimeout(() => {
-      login({
-        id: '1',
-        name: 'John Doe',
-        email: email,
-        token: 'fake-jwt-token'
+    try {
+      // Make REAL API call to your backend
+      const response = await fetch('http://localhost:3001/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
       });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+      
+      // Check what your backend actually returns
+      console.log('Login response:', data);
+      
+      // Adjust based on your backend response structure:
+      // Option 1: If backend returns { user, access_token }
+      if (data.access_token && data.user) {
+        login(data.access_token, data.user);
+        navigate('/dashboard');
+      } 
+      // Option 2: If backend returns { token, ...userData }
+      else if (data.token) {
+        login(data.token, { 
+          id: data.id, 
+          name: data.name, 
+          email: data.email,
+          // include other user fields your backend returns
+        });
+        navigate('/dashboard');
+      }
+      // Option 3: If token is in Authorization header
+      else {
+        const authHeader = response.headers.get('Authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+          const token = authHeader.substring(7);
+          login(token, data);
+          navigate('/dashboard');
+        } else {
+          throw new Error('No token received from server');
+        }
+      }
+      
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
       setLoading(false);
-      navigate('/dashboard');
-    }, 1000);
+    }
   };
 
   return (
@@ -39,6 +84,14 @@ const LoginPage: React.FC = () => {
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-card py-8 px-10 shadow-2xl rounded-3xl border border-color">
+          
+          {/* Error Display */}
+          {error && (
+            <div className="mb-6 p-3 bg-red-100 border border-red-300 text-red-800 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+          
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label className="block text-sm font-semibold text-primary">Email Address</label>
@@ -89,7 +142,12 @@ const LoginPage: React.FC = () => {
               disabled={loading}
               className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-all"
             >
-              {loading ? <div className="animate-spin h-5 w-5 border-2 border-white/30 border-t-white rounded-full" /> : 'Sign In'}
+              {loading ? (
+                <div className="flex items-center">
+                  <div className="animate-spin h-5 w-5 border-2 border-white/30 border-t-white rounded-full mr-2" />
+                  Signing in...
+                </div>
+              ) : 'Sign In'}
             </button>
           </form>
         </div>

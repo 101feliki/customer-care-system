@@ -150,7 +150,7 @@ const SettingsPage: React.FC = () => {
               {activeTab === 'profile' && (
                 <section className="bg-card border border-color rounded-2xl p-8 shadow-sm animate-in fade-in duration-500">
                   <div className="flex items-center space-x-6 mb-8">
-                    <div className="h-20 w-20 rounded-2xl bg-gradient-to-tr from-blue-800 to-indigo-600 flex items-center justify-center text-3xl font-bold text-white shadow-xl shadow-blue-500/20">
+                    <div className="h-15 w-15 rounded-2xl bg-gradient-to-tr from-blue-800 to-blue-800 flex items-center justify-center text-3xl font-bold text-white shadow-xl ">
                       {user?.name?.charAt(0) || 'A'}
                     </div>
                     <div>
