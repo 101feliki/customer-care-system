@@ -117,33 +117,15 @@ const NotificationsPage: React.FC = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-primary">All Notifications</h1>
-                <p className="text-secondary">Manage all customer notifications in one place</p>
+                
               </div>
               
               <div className="flex items-center space-x-4">
                 <ThemeSwitcher />
                 
                 <div className="flex space-x-2">
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`px-4 py-2 rounded-lg ${
-                      viewMode === 'list' 
-                        ? 'bg-blue-600 text-white' 
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    List View
-                  </button>
-                  <button
-                    onClick={() => setViewMode('grid')}
-                    className={`px-4 py-2 rounded-lg ${
-                      viewMode === 'grid' 
-                        ? 'bg-blue-600 text-white' 
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    Grid View
-                  </button>
+                 
+                  
                 </div>
               </div>
             </div>
