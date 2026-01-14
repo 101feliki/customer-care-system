@@ -1,4 +1,4 @@
-// src/infra/database/prisma/seed.ts
+// src/infra/database/prisma/seed.ts - FINAL VERSION
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -8,10 +8,11 @@ async function main() {
   console.log('🚀 Seeding database...');
   
   try {
-    // 1. Create admin user
+    // 1. Hash password for admin user
     const hashedPassword = await bcrypt.hash('admin123', 10);
     
-    await prisma.user.upsert({
+    // 2. Create admin user
+    const adminUser = await prisma.user.upsert({
       where: { email: 'admin@birdview.com' },
       update: {},
       create: {
@@ -22,29 +23,72 @@ async function main() {
         isVerified: true,
       },
     });
-    console.log('✅ Created admin user');
+    console.log('✅ Created admin user:', adminUser.email);
     
-    // 2. Create recipients (simple create - will error on duplicates)
-    const recipients = [
-      { name: 'John Doe', email: 'john@example.com', phone: '+1234567890' },
-      { name: 'Jane Smith', email: 'jane@example.com', phone: '+0987654321' },
-    ];
+    // 3. Create recipients (email is @unique so upsert works)
+    const recipients = await Promise.all([
+      prisma.recipient.upsert({
+        where: { email: 'john@example.com' },
+        update: {},
+        create: {
+          name: 'John Doe',
+          email: 'john@example.com',
+          phone: '+1234567890',
+        },
+      }),
+      prisma.recipient.upsert({
+        where: { email: 'jane@example.com' },
+        update: {},
+        create: {
+          name: 'Jane Smith',
+          email: 'jane@example.com',
+          phone: '+0987654321',
+        },
+      }),
+    ]);
     
-    for (const recipient of recipients) {
-      try {
-        await prisma.recipient.create({ data: recipient });
-        console.log(`✅ Created recipient: ${recipient.email}`);
-      } catch {
-        console.log(`⚠️ Skipped ${recipient.email} (may already exist)`);
-      }
-    }
+    console.log(`✅ Created ${recipients.length} recipients`);
     
-    console.log('🎉 Seeding complete!');
+    // 4. Create email templates
+    const templates = await Promise.all([
+      prisma.emailTemplate.upsert({
+        where: { name: 'Welcome Email' },
+        update: {},
+        create: {
+          name: 'Welcome Email',
+          subject: 'Welcome {{name}}!',
+          htmlBody: '<h1>Welcome {{name}}!</h1><p>Thank you for joining us.</p>',
+          textBody: 'Welcome {{name}}! Thank you for joining us.',
+          variables: ['name', 'email'],
+        },
+      }),
+      prisma.emailTemplate.upsert({
+        where: { name: 'Password Reset' },
+        update: {},
+        create: {
+          name: 'Password Reset',
+          subject: 'Reset Your Password',
+          htmlBody: '<p>Click <a href="{{resetLink}}">here</a> to reset your password.</p>',
+          textBody: 'Reset link: {{resetLink}}',
+          variables: ['resetLink'],
+        },
+      }),
+    ]);
+    
+    console.log(`✅ Created ${templates.length} email templates`);
+    console.log('🎉 Database seeding completed!');
     
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error('❌ Seeding error:', error);
+    throw error;
   }
 }
 
 main()
-  .finally(() => prisma.$disconnect());
+  .catch((e) => {
+    console.error('❌ Fatal error:', e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
