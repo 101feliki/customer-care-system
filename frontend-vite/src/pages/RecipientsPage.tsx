@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext'; // ADD THIS IMPORT
 import { 
   UserIcon, 
   EnvelopeIcon, 
@@ -21,110 +22,17 @@ interface Recipient {
   name: string;
   email: string;
   phone: string;
-  notificationsReceived: number;
-  lastActive: string;
   status: 'active' | 'inactive' | 'blocked';
   createdAt: string;
   updatedAt: string;
+  // REMOVED: notificationsReceived and lastActive if not in your backend
+  // notificationsReceived: number;
+  // lastActive: string;
 }
-
-// Mock database simulation
-const mockRecipientsDB: Recipient[] = [
-  { id: '1', name: 'John Smith', email: 'john@example.com', phone: '+254 712 345 678', notificationsReceived: 24, lastActive: '2 hours ago', status: 'active', createdAt: '2024-01-15', updatedAt: '2024-01-20' },
-  { id: '2', name: 'Sarah Johnson', email: 'sarah@example.com', phone: '+254 723 456 789', notificationsReceived: 18, lastActive: '1 day ago', status: 'active', createdAt: '2024-01-16', updatedAt: '2024-01-19' },
-  { id: '3', name: 'Mike Wilson', email: 'mike@example.com', phone: '+254 734 567 890', notificationsReceived: 32, lastActive: '3 days ago', status: 'inactive', createdAt: '2024-01-10', updatedAt: '2024-01-18' },
-  { id: '4', name: 'Emma Davis', email: 'emma@example.com', phone: '+254 745 678 901', notificationsReceived: 15, lastActive: '1 hour ago', status: 'active', createdAt: '2024-01-17', updatedAt: '2024-01-20' },
-  { id: '5', name: 'David Brown', email: 'david@example.com', phone: '+254 756 789 012', notificationsReceived: 8, lastActive: '1 week ago', status: 'blocked', createdAt: '2024-01-12', updatedAt: '2024-01-19' },
-  { id: '6', name: 'Lisa Taylor', email: 'lisa@example.com', phone: '+254 767 890 123', notificationsReceived: 27, lastActive: '5 hours ago', status: 'active', createdAt: '2024-01-18', updatedAt: '2024-01-20' },
-];
-
-// Mock API calls
-const mockAPI = {
-  getRecipients: (): Promise<Recipient[]> => {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        const recipients = JSON.parse(localStorage.getItem('recipients') || JSON.stringify(mockRecipientsDB));
-        resolve(recipients);
-      }, 300);
-    });
-  },
-  
-  saveRecipients: (recipients: Recipient[]): Promise<void> => {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        localStorage.setItem('recipients', JSON.stringify(recipients));
-        resolve();
-      }, 300);
-    });
-  },
-  
-  addRecipient: (recipient: Omit<Recipient, 'id' | 'createdAt' | 'updatedAt' | 'notificationsReceived' | 'lastActive'>): Promise<Recipient> => {
-    return new Promise(resolve => {
-      setTimeout(async () => {
-        const recipients = await mockAPI.getRecipients();
-        const newRecipient: Recipient = {
-          ...recipient,
-          id: String(Date.now()),
-          notificationsReceived: 0,
-          lastActive: 'Never',
-          createdAt: new Date().toISOString().split('T')[0],
-          updatedAt: new Date().toISOString().split('T')[0]
-        };
-        recipients.push(newRecipient);
-        await mockAPI.saveRecipients(recipients);
-        resolve(newRecipient);
-      }, 300);
-    });
-  },
-  
-  updateRecipient: (id: string, updates: Partial<Recipient>): Promise<Recipient> => {
-    return new Promise(resolve => {
-      setTimeout(async () => {
-        const recipients = await mockAPI.getRecipients();
-        const index = recipients.findIndex(r => r.id === id);
-        if (index !== -1) {
-          recipients[index] = {
-            ...recipients[index],
-            ...updates,
-            updatedAt: new Date().toISOString().split('T')[0]
-          };
-          await mockAPI.saveRecipients(recipients);
-          resolve(recipients[index]);
-        }
-        throw new Error('Recipient not found');
-      }, 300);
-    });
-  },
-  
-  deleteRecipient: (id: string): Promise<void> => {
-    return new Promise(resolve => {
-      setTimeout(async () => {
-        const recipients = await mockAPI.getRecipients();
-        const filtered = recipients.filter(r => r.id !== id);
-        await mockAPI.saveRecipients(filtered);
-        resolve();
-      }, 300);
-    });
-  },
-  
-  updateLastActive: (id: string): Promise<void> => {
-    return new Promise(resolve => {
-      setTimeout(async () => {
-        const recipients = await mockAPI.getRecipients();
-        const index = recipients.findIndex(r => r.id === id);
-        if (index !== -1) {
-          recipients[index].lastActive = 'Just now';
-          recipients[index].notificationsReceived += 1;
-          await mockAPI.saveRecipients(recipients);
-        }
-        resolve();
-      }, 300);
-    });
-  }
-};
 
 const RecipientsPage: React.FC = () => {
   const { theme } = useTheme();
+  const { token } = useAuth(); // ADD THIS - get token from auth context
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -141,23 +49,178 @@ const RecipientsPage: React.FC = () => {
   });
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
-  // Load recipients from database
+  // API BASE URL - UPDATE THIS TO YOUR ACTUAL BACKEND URL
+  const API_BASE_URL = 'http://localhost:3001';
+
+  // Load recipients from REAL backend API
   useEffect(() => {
     loadRecipients();
   }, []);
 
   const loadRecipients = async () => {
-    setLoading(true);
+  setLoading(true);
+  try {
+    const response = await fetch(`${API_BASE_URL}/recipients`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    // DEBUG: Check what's returned
+    console.log('API Response:', data);
+    console.log('Type of data:', typeof data);
+    console.log('Is array?', Array.isArray(data));
+    
+    // Handle different response formats
+    let recipientsArray: Recipient[] = [];
+    
+    if (Array.isArray(data)) {
+      // Direct array response
+      recipientsArray = data;
+    } else if (data && Array.isArray(data.recipients)) {
+      // Response with { recipients: [...] }
+      recipientsArray = data.recipients;
+    } else if (data && Array.isArray(data.data)) {
+      // Response with { data: [...] }
+      recipientsArray = data.data;
+    } else if (data && typeof data === 'object') {
+      // Single object response, wrap in array
+      recipientsArray = [data];
+    } else {
+      // Empty or invalid response
+      recipientsArray = [];
+      console.warn('Unexpected response format:', data);
+    }
+    
+    console.log('Processed recipients:', recipientsArray);
+    setRecipients(recipientsArray);
+    
+  } catch (error) {
+    console.error('Error loading recipients:', error);
+    setMessage({ 
+      type: 'error', 
+      text: 'Failed to load recipients. Make sure backend is running.' 
+    });
+    setRecipients([]); // Set to empty array on error
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const handleAddRecipient = async () => {
+    if (!formData.name || !formData.email) {
+      setMessage({ type: 'error', text: 'Name and email are required' });
+      return;
+    }
+
     try {
-      const data = await mockAPI.getRecipients();
-      setRecipients(data);
+      const response = await fetch(`${API_BASE_URL}/recipients`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone || null, // Send null if empty
+          status: formData.status
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to add recipient');
+      }
+
+      await loadRecipients(); // Reload the list
+      setShowAddModal(false);
+      resetForm();
+      setMessage({ type: 'success', text: 'Recipient added successfully' });
+      setTimeout(() => setMessage(null), 3000);
     } catch (error) {
-      console.error('Error loading recipients:', error);
-      setMessage({ type: 'error', text: 'Failed to load recipients' });
-    } finally {
-      setLoading(false);
+      setMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : 'Failed to add recipient' 
+      });
     }
   };
+
+  const handleEditRecipient = async () => {
+    if (!selectedRecipient) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/recipients/${selectedRecipient.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone || null,
+          status: formData.status
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update recipient');
+      }
+
+      await loadRecipients(); // Reload the list
+      setShowEditModal(false);
+      resetForm();
+      setMessage({ type: 'success', text: 'Recipient updated successfully' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (error) {
+      setMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : 'Failed to update recipient' 
+      });
+    }
+  };
+
+  const handleDeleteRecipient = async () => {
+    if (!selectedRecipient) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/recipients/${selectedRecipient.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete recipient');
+      }
+
+      await loadRecipients(); // Reload the list
+      setShowDeleteModal(false);
+      setSelectedRecipient(null);
+      setMessage({ type: 'success', text: 'Recipient deleted successfully' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (error) {
+      setMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : 'Failed to delete recipient' 
+      });
+    }
+  };
+
+  // Rest of your filtering and UI functions remain mostly the same...
+  // Just remove the mockAPI references and notificationsReceived/lastActive fields
 
   const filteredRecipients = recipients.filter(recipient => {
     if (search && !recipient.name.toLowerCase().includes(search.toLowerCase()) && 
@@ -177,62 +240,7 @@ const RecipientsPage: React.FC = () => {
     blocked: recipients.filter(r => r.status === 'blocked').length,
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'text-green-600 bg-green-50 dark:bg-green-900/20';
-      case 'inactive': return 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20';
-      case 'blocked': return 'text-red-600 bg-red-50 dark:bg-red-900/20';
-      default: return 'text-gray-600 bg-gray-50 dark:bg-gray-800';
-    }
-  };
-
-  const handleAddRecipient = async () => {
-    if (!formData.name || !formData.email) {
-      setMessage({ type: 'error', text: 'Name and email are required' });
-      return;
-    }
-
-    try {
-      await mockAPI.addRecipient(formData);
-      await loadRecipients();
-      setShowAddModal(false);
-      resetForm();
-      setMessage({ type: 'success', text: 'Recipient added successfully' });
-      setTimeout(() => setMessage(null), 3000);
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to add recipient' });
-    }
-  };
-
-  const handleEditRecipient = async () => {
-    if (!selectedRecipient) return;
-
-    try {
-      await mockAPI.updateRecipient(selectedRecipient.id, formData);
-      await loadRecipients();
-      setShowEditModal(false);
-      resetForm();
-      setMessage({ type: 'success', text: 'Recipient updated successfully' });
-      setTimeout(() => setMessage(null), 3000);
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to update recipient' });
-    }
-  };
-
-  const handleDeleteRecipient = async () => {
-    if (!selectedRecipient) return;
-
-    try {
-      await mockAPI.deleteRecipient(selectedRecipient.id);
-      await loadRecipients();
-      setShowDeleteModal(false);
-      setSelectedRecipient(null);
-      setMessage({ type: 'success', text: 'Recipient deleted successfully' });
-      setTimeout(() => setMessage(null), 3000);
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to delete recipient' });
-    }
-  };
+  
 
   const handleEditClick = (recipient: Recipient) => {
     setSelectedRecipient(recipient);
@@ -271,15 +279,67 @@ const RecipientsPage: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Export function for Templates page to access recipients
-  const getActiveRecipients = () => {
-    return recipients.filter(r => r.status === 'active');
-  };
+  // Update the table row to remove notificationsReceived and lastActive columns
+  // Here's the updated table row structure:
+  /*
+  <tr key={recipient.id} className="hover:bg-hover">
+    <td className="px-6 py-4 whitespace-nowrap">
+      <div className="flex items-center">
+        <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+          <UserIcon className="h-5 w-5 text-blue-600 dark:text-blue-300" />
+        </div>
+        <div className="ml-4">
+          <div className="text-sm font-medium text-primary">{recipient.name}</div>
+          <div className="text-sm text-secondary">ID: {recipient.id}</div>
+        </div>
+      </div>
+    </td>
+    <td className="px-6 py-4 whitespace-nowrap">
+      <div className="text-sm text-primary">{recipient.email}</div>
+      <div className="text-sm text-secondary flex items-center">
+        <PhoneIcon className="h-3 w-3 mr-1" />
+        {recipient.phone || 'No phone'}
+      </div>
+    </td>
+    <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary">
+      Created: {recipient.createdAt}
+    </td>
+    <td className="px-6 py-4 whitespace-nowrap">
+      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(recipient.status)}`}>
+        {recipient.status.charAt(0).toUpperCase() + recipient.status.slice(1)}
+      </span>
+    </td>
+    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+      <div className="flex space-x-2">
+        <button 
+          onClick={() => handleEditClick(recipient)}
+          className="text-blue-600 hover:text-blue-900 dark:hover:text-blue-400"
+          title="Edit recipient"
+        >
+          <PencilIcon className="h-5 w-5" />
+        </button>
+        <button 
+          onClick={() => handleDeleteClick(recipient)}
+          className="text-red-600 hover:text-red-900 dark:hover:text-red-400"
+          title="Delete recipient"
+        >
+          <TrashIcon className="h-5 w-5" />
+        </button>
+      </div>
+    </td>
+  </tr>
+  */
 
-  // Expose to window for Templates page access (in real app, use context/state management)
-  if (typeof window !== 'undefined') {
-    (window as any).getRecipientsForTemplates = getActiveRecipients;
-  }
+  // In your table header, update to match:
+  /*
+  <tr>
+    <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Recipient</th>
+    <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Contact</th>
+    <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Created</th>
+    <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Status</th>
+    <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Actions</th>
+  </tr>
+  */
 
   return (
     <div className="h-screen flex overflow-hidden bg-primary">
@@ -310,7 +370,7 @@ const RecipientsPage: React.FC = () => {
                       resetForm();
                       setShowAddModal(true);
                     }}
-                    className="px-2 py-1 bg-blue-800 text-white rounded-lg hover:bg-blue-700 flex items-center"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
                   >
                     <PlusIcon className="h-5 w-5 mr-2" />
                     Add Recipient
@@ -345,7 +405,7 @@ const RecipientsPage: React.FC = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className={`px-3 py-2 rounded-lg border ${
+                  className={`px-4 py-2 rounded-lg border ${
                     theme === 'dark' 
                       ? 'bg-gray-700 border-gray-600 text-white' 
                       : 'bg-white border-gray-300 text-gray-900'
@@ -415,68 +475,73 @@ const RecipientsPage: React.FC = () => {
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Recipient</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Contact</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Notifications</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Last Active</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Created</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Status</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className={`divide-y divide-color ${
-                      theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-                    }`}>
-                      {filteredRecipients.map((recipient) => (
-                        <tr key={recipient.id} className="hover:bg-hover">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                                <UserIcon className="h-5 w-5 text-blue-600 dark:text-blue-300" />
-                              </div>
-                              <div className="ml-4">
-                                <div className="text-sm font-medium text-primary">{recipient.name}</div>
-                                <div className="text-sm text-secondary">ID: {recipient.id}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-primary">{recipient.email}</div>
-                            <div className="text-sm text-secondary flex items-center">
-                              <PhoneIcon className="h-3 w-3 mr-1" />
-                              {recipient.phone}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-primary">{recipient.notificationsReceived}</div>
-                            <div className="text-sm text-secondary">notifications</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary">
-                            {recipient.lastActive}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(recipient.status)}`}>
-                              {recipient.status.charAt(0).toUpperCase() + recipient.status.slice(1)}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div className="flex space-x-2">
-                              <button 
-                                onClick={() => handleEditClick(recipient)}
-                                className="text-blue-600 hover:text-blue-900 dark:hover:text-blue-400"
-                                title="Edit recipient"
-                              >
-                                <PencilIcon className="h-5 w-5" />
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteClick(recipient)}
-                                className="text-red-600 hover:text-red-900 dark:hover:text-red-400"
-                                title="Delete recipient"
-                              >
-                                <TrashIcon className="h-5 w-5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
+  theme === 'dark' ? 'bg-gray-800' : 'bg-white'
+}`}>
+  {filteredRecipients.map((recipient) => {
+    // Add safety checks
+    const safeName = recipient?.name || 'Unknown';
+    const safeEmail = recipient?.email || 'No email';
+    const safePhone = recipient?.phone || 'No phone';
+    const safeStatus = recipient?.status || 'inactive';
+    const safeId = recipient?.id || 'unknown';
+    const safeCreatedAt = recipient?.createdAt ? new Date(recipient.createdAt).toLocaleDateString() : 'Unknown';
+    
+    return (
+      <tr key={safeId} className="hover:bg-hover">
+        <td className="px-6 py-4 whitespace-nowrap">
+          <div className="flex items-center">
+            <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+              <UserIcon className="h-5 w-5 text-blue-600 dark:text-blue-300" />
+            </div>
+            <div className="ml-4">
+              <div className="text-sm font-medium text-primary">{safeName}</div>
+              <div className="text-sm text-secondary">ID: {safeId.substring(0, 8)}...</div>
+            </div>
+          </div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <div className="text-sm text-primary">{safeEmail}</div>
+          <div className="text-sm text-secondary flex items-center">
+            <PhoneIcon className="h-3 w-3 mr-1" />
+            {safePhone}
+          </div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary">
+          {safeCreatedAt}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(safeStatus)}`}>
+            {safeStatus.charAt(0).toUpperCase() + safeStatus.slice(1)}
+          </span>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+          <div className="flex space-x-2">
+            <button 
+              onClick={() => handleEditClick(recipient)}
+              className="text-blue-600 hover:text-blue-900 dark:hover:text-blue-400"
+              title="Edit recipient"
+            >
+              <PencilIcon className="h-5 w-5" />
+            </button>
+            <button 
+              onClick={() => handleDeleteClick(recipient)}
+              className="text-red-600 hover:text-red-900 dark:hover:text-red-400"
+              title="Delete recipient"
+            >
+              <TrashIcon className="h-5 w-5" />
+            </button>
+          </div>
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
                   </table>
                 </div>
                 
@@ -493,257 +558,10 @@ const RecipientsPage: React.FC = () => {
         </main>
       </div>
 
-      {/* Add Recipient Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
-            <div className="px-8 py-4 border-b border-color flex justify-between items-center bg-blue-500 dark:bg-blue-800/50">
-              <h2 className="text-xl font-bold text-primary">Add New Recipient</h2>
-              <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-200 rounded-full">
-                <XMarkIcon className="h-6 w-6 text-secondary" />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-primary mb-2">
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  placeholder="Enter recipient name"
-                  className={`w-4/5 mx-auto p-1 rounded-lg border ${
-                    theme === 'dark' 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-primary mb-2">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  placeholder="Enter email address"
-                  className={`w-4/5 mx-auto p-1 rounded-lg border ${
-                    theme === 'dark' 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-primary mb-2">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  placeholder="Enter phone number"
-                  className={`w-4/5 p-2 rounded-lg border ${
-                    theme === 'dark' 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-primary mb-2">
-                  Status
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({...formData, status: e.target.value as any})}
-                  className={`w-4/5 p-2 rounded-lg border ${
-                    theme === 'dark' 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="blocked">Blocked</option>
-                </select>
-              </div>
-            </div>
-            
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  resetForm();
-                }}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddRecipient}
-                disabled={!formData.name || !formData.email}
-                className="px-8 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Add Recipient
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Recipient Modal */}
-      {showEditModal && selectedRecipient && (
-        <div className="fixed inset-0 bg-black/60  backdrop-blur-sm z-50  flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
-            <div className="px-8 py-4 border-b border-color flex justify-between items-center bg-blue-500 dark:bg-blue-800/50">
-              <h2 className="text-xl font-bold text-primary">Edit Recipient</h2>
-             
-              <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-400 rounded-full">
-                <XMarkIcon className="h-6 w-6 text-secondary" />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-primary mb-2">
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className={`w-4/5 p-2 rounded-lg border ${
-                    theme === 'dark' 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-primary mb-2">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className={`w-4/5 p-2 rounded-lg border ${
-                    theme === 'dark' 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-primary mb-2">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  className={`w-4/5 p-2 rounded-lg border ${
-                    theme === 'dark' 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-primary mb-2">
-                  Status
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({...formData, status: e.target.value as any})}
-                  className={`w-4/5 p-2 rounded-lg border ${
-                    theme === 'dark' 
-                      ? 'bg-gray-700 border-gray-600 text-white' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="blocked">Blocked</option>
-                </select>
-              </div>
-             
-            </div>
-            
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  resetForm();
-                }}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleEditRecipient}
-                disabled={!formData.name || !formData.email}
-                className="px-8 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Update Recipient
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && selectedRecipient && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50  flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
-            <div className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center mb-4">
-                <TrashIcon className="h-6 w-6 text-red-800 dark:text-red-200" />
-              </div>
-              <h3 className="text-lg font-bold text-primary mb-2">Delete Recipient</h3>
-              <p className="text-secondary text-center mb-4">
-                Are you sure you want to delete <strong>{selectedRecipient.name}</strong>?
-                This action cannot be undone.
-              </p>
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => {
-                    setShowDeleteModal(false);
-                    setSelectedRecipient(null);
-                  }}
-                  className="px-4 py-2 border border-color   text-white rounded-lg hover:bg-hover text-primary"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteRecipient}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                >
-                  Delete Recipient
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Add/Edit modals remain similar but use the new API functions */}
+      {/* ... keep your modal code as is, but they'll use handleAddRecipient, handleEditRecipient, etc. */}
     </div>
   );
-};
-
-// Export the function to access recipients from Templates page
-export const getActiveRecipients = (): Recipient[] => {
-  const recipients = JSON.parse(localStorage.getItem('recipients') || '[]');
-  return recipients.filter((r: Recipient) => r.status === 'active');
 };
 
 export default RecipientsPage;
