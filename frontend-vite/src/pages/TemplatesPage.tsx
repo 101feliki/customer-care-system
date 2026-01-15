@@ -61,7 +61,7 @@ const TemplatesPage: React.FC = () => {
       if (!response.ok) throw new Error('Failed to fetch templates');
       
       const data = await response.json();
-      setTemplates(data);
+      setTemplates(Array.isArray(data) ? data : data.data || []);
     } catch (err) {
       setError('Could not load templates.?');
     } finally {
