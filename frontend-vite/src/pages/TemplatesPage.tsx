@@ -18,13 +18,13 @@ import {
 
 // --- Types matching your NestJS Backend ---
 interface Template {
-  id: string ;
+  id: string; // Changed to string for UUID
   name: string;
-  type: string; // EMAIL, SMS, PUSH
-  content: string; // For SMS/PUSH
-  subject?: string; // For email only
-  htmlBody?: string; // For email only
-  textBody?: string; // For email only
+  type: string; 
+  content?: string;
+  subject?: string;
+  htmlBody?: string;
+  textBody?: string;
   variables?: string[];
   createdAt?: string;
   updatedAt?: string;
@@ -32,7 +32,6 @@ interface Template {
 
 const TemplatesPage: React.FC = () => {
   const { theme } = useTheme();
-  // Ensure your AuthContext defines 'token' in its interface!
   const { token } = useAuth(); 
   
   // --- Real Data State ---
@@ -46,41 +45,91 @@ const TemplatesPage: React.FC = () => {
   const [isEditMode, setIsEditMode] = useState(false);
 
   // --- Form State ---
-  // Explicitly typing name as string to avoid global 'window.name' conflicts
   const [formData, setFormData] = useState({
     id: '',
-    name: '' as string,
-    type: 'EMAIL',
-    content: ''
+    name: '',
+    type: 'EMAIL' as 'EMAIL' | 'SMS' | 'PUSH',
+    content: '',
+    subject: '',
+    htmlBody: '',
+    textBody: '',
+    variables: ['name', 'email', 'company', 'date'] as string[],
   });
 
   // 1. FETCH TEMPLATES FROM BACKEND
   const fetchTemplates = async () => {
-    if (!token) return;
+    if (!token) {
+      console.log('No token available');
+      return;
+    }
+    
     try {
       setIsLoading(true);
+      console.log('Fetching templates with token:', token.substring(0, 20) + '...');
+      
       const response = await fetch('http://localhost:3001/templates', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
       
-      if (!response.ok) throw new Error('Failed to fetch templates');
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to fetch templates: ${response.status} ${errorText}`);
+      }
       
       const data = await response.json();
-      setTemplates(Array.isArray(data) ? data : data.data || []);
+      console.log('Raw API response:', data);
+      
+      // Process the response
+      let templatesArray: Template[] = [];
+      if (Array.isArray(data)) {
+        templatesArray = data;
+      } else if (data && Array.isArray(data.data)) {
+        templatesArray = data.data;
+      } else if (data && Array.isArray(data.templates)) {
+        templatesArray = data.templates;
+      }
+      
+      console.log('Processed templates:', templatesArray);
+      setTemplates(templatesArray);
+      setError('');
+      
     } catch (err) {
-      setError('Could not load templates.?');
+      console.error('Error fetching templates:', err);
+      setError(`Could not load templates: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchTemplates();
+    if (token) {
+      fetchTemplates();
+    }
   }, [token]);
 
   // 2. CREATE OR UPDATE TEMPLATE
   const handleSubmit = async () => {
-    if (!formData.name || !formData.content) return alert('Name and Content are required');
+    if (!formData.name) {
+      alert('Name is required');
+      return;
+    }
+
+    // Validate based on template type
+    if (formData.type === 'EMAIL' && !formData.htmlBody && !formData.content) {
+      alert('Content is required for email templates');
+      return;
+    }
+    
+    if ((formData.type === 'SMS' || formData.type === 'PUSH') && !formData.content) {
+      alert('Content is required for SMS and Push templates');
+      return;
+    }
 
     try {
       const url = isEditMode 
@@ -89,32 +138,53 @@ const TemplatesPage: React.FC = () => {
       
       const method = isEditMode ? 'PUT' : 'POST';
 
+      // Prepare request based on template type
+      const requestBody: any = {
+        name: formData.name,
+        type: formData.type,
+      };
+
+      // Add fields based on template type
+      if (formData.type === 'EMAIL') {
+        requestBody.subject = formData.subject || formData.name;
+        requestBody.htmlBody = formData.htmlBody || formData.content;
+        requestBody.textBody = formData.textBody || formData.htmlBody || formData.content;
+        requestBody.variables = formData.variables;
+      } else {
+        // For SMS and PUSH
+        requestBody.content = formData.content;
+        requestBody.variables = formData.variables;
+      }
+
+      console.log('Sending request:', { url, method, body: requestBody });
+
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({
-          name: formData.name,
-          type: formData.type,
-          content: formData.content
-        })
+        body: JSON.stringify(requestBody)
       });
 
-      if (!response.ok) throw new Error('Operation failed');
+      const responseText = await response.text();
+      console.log('Response:', response.status, responseText);
+
+      if (!response.ok) {
+        throw new Error(`Failed: ${response.status} ${responseText}`);
+      }
 
       setShowModal(false);
       fetchTemplates(); 
       alert(isEditMode ? 'Template Updated!' : 'Template Created!');
     } catch (err) {
-      alert('Error saving template.');
-      console.error(err);
+      console.error('Error saving template:', err);
+      alert(`Error saving template: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
   // 3. DELETE TEMPLATE
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if(!window.confirm('Are you sure you want to delete this template?')) return;
 
     try {
@@ -122,11 +192,17 @@ const TemplatesPage: React.FC = () => {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
+      
       if (response.ok) {
         setTemplates(prev => prev.filter(t => t.id !== id));
+        alert('Template deleted successfully');
+      } else {
+        const errorText = await response.text();
+        throw new Error(`Failed to delete: ${errorText}`);
       }
     } catch (err) {
-      alert('Failed to delete');
+      console.error('Delete error:', err);
+      alert('Failed to delete template');
     }
   };
 
@@ -135,21 +211,37 @@ const TemplatesPage: React.FC = () => {
       setFormData({
         id: template.id,
         name: template.name,
-        type: template.type,
-        content: template.content
+        type: (template.type as 'EMAIL' | 'SMS' | 'PUSH') || 'EMAIL',
+        content: template.content || template.htmlBody || '',
+        subject: template.subject || '',
+        htmlBody: template.htmlBody || '',
+        textBody: template.textBody || '',
+        variables: template.variables || ['name', 'email', 'company', 'date'],
       });
       setIsEditMode(true);
     } else {
-      setFormData({ id: 0, name: '', type: 'EMAIL', content: '' });
+      setFormData({ 
+        id: '', 
+        name: '', 
+        type: 'EMAIL',
+        content: '',
+        subject: '',
+        htmlBody: '',
+        textBody: '',
+        variables: ['name', 'email', 'company', 'date'],
+      });
       setIsEditMode(false);
     }
     setShowModal(true);
   };
 
   const insertVariable = (varName: string) => {
+    const variable = `{{${varName}}}`;
     setFormData(prev => ({
       ...prev,
-      content: prev.content + ` {{${varName}}} `
+      content: prev.content + ` ${variable} `,
+      htmlBody: prev.htmlBody + ` ${variable} `,
+      textBody: prev.textBody + ` ${variable} `,
     }));
   };
 
@@ -157,6 +249,13 @@ const TemplatesPage: React.FC = () => {
     if(type === 'SMS') return <ChatBubbleBottomCenterTextIcon className="h-5 w-5 text-green-500"/>;
     if(type === 'PUSH') return <BellIcon className="h-5 w-5 text-purple-500"/>;
     return <EnvelopeIcon className="h-5 w-5 text-blue-500"/>;
+  };
+
+  const getTemplateContent = (template: Template) => {
+    if (template.type === 'EMAIL') {
+      return template.subject || template.htmlBody?.substring(0, 100) || 'No content';
+    }
+    return template.content?.substring(0, 100) || 'No content';
   };
 
   const filteredTemplates = templates.filter(t => 
@@ -172,13 +271,13 @@ const TemplatesPage: React.FC = () => {
           <div className="px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-primary">Templates</h1>
-              <p className="text-secondary text-sm"></p>
+              <p className="text-secondary text-sm">Create and manage notification templates</p>
             </div>
             <div className="flex items-center space-x-3">
               <ThemeSwitcher />
               <button 
                 onClick={() => openModal()}
-                className="px-4 py-2 bg-blue-800 text-white rounded-lg hover:bg-blue-800 flex items-center shadow-lg transition-all"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center shadow-lg transition-all"
               >
                 <PlusIcon className="h-5 w-5 mr-2" />
                 Create Template
@@ -201,10 +300,13 @@ const TemplatesPage: React.FC = () => {
 
           {isLoading ? (
             <div className="flex justify-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-800"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <p className="ml-4 text-secondary">Loading templates...</p>
             </div>
           ) : error ? (
-            <div className="p-4 bg-red-100 text-red-900 rounded-lg border border-red-200 mb-6">{error}</div>
+            <div className="p-4 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300 rounded-lg border border-red-200 dark:border-red-800 mb-6">
+              {error}
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredTemplates.map((template) => (
@@ -215,7 +317,6 @@ const TemplatesPage: React.FC = () => {
                         {getIcon(template.type)}
                       </div>
                       <div>
-                        {/* Fix: Accessing template.name clearly */}
                         <h3 className="font-bold text-primary">{template.name}</h3>
                         <span className="text-xs font-mono text-secondary bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">
                           {template.type}
@@ -235,15 +336,19 @@ const TemplatesPage: React.FC = () => {
 
                   <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg mb-3 h-24 overflow-hidden relative">
                     <p className="text-secondary font-mono text-xs leading-relaxed">
-                      {template.content}
+                      {getTemplateContent(template)}
                     </p>
-                    <div className="absolute bottom-0 left-0 w-full h-8 bg-linear-to-t from-gray-50 dark:from-gray-900 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-gray-50 dark:from-gray-900 to-transparent"></div>
                   </div>
 
                   <div className="flex justify-between items-center text-xs text-secondary mt-2">
-                     <span>ID: #{template.id}</span>
+                     <span>ID: #{template.id.substring(0, 8)}...</span>
                      <button 
-                       onClick={() => navigator.clipboard.writeText(template.content)}
+                       onClick={() => navigator.clipboard.writeText(
+                         template.type === 'EMAIL' 
+                           ? template.htmlBody || template.content || '' 
+                           : template.content || ''
+                       )}
                        className="flex items-center hover:text-primary"
                      >
                        <ClipboardIcon className="h-3 w-3 mr-1" /> Copy
@@ -261,14 +366,14 @@ const TemplatesPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-card w-full max-w-5xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
             
-            <div className="px-6 py-4 border-b border-color flex justify-between items-center bg-gray-500 dark:bg-blue-800/50">
+            <div className="px-6 py-4 border-b border-color flex justify-between items-center bg-blue-600 dark:bg-blue-800 text-white">
               <div>
-                <h2 className="text-xl font-bold text-primary">
+                <h2 className="text-xl font-bold">
                   {isEditMode ? 'Edit Template' : 'Create New Template'}
                 </h2>
               </div>
-              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-400 rounded-full">
-                <XMarkIcon className="h-6 w-6 text-secondary" />
+              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-blue-700 rounded-full">
+                <XMarkIcon className="h-6 w-6" />
               </button>
             </div>
 
@@ -278,20 +383,20 @@ const TemplatesPage: React.FC = () => {
                 <div className="space-y-5">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-secondary mb-1">NAME</label>
+                      <label className="block text-xs font-semibold text-secondary mb-1">NAME *</label>
                       <input 
-                        className="w-full bg-card border border-color rounded-lg px-4 py-1 text-primary focus:ring-2 focus:ring-blue-300 outline-none"
+                        className="w-full bg-card border border-color rounded-lg px-4 py-2 text-primary focus:ring-2 focus:ring-blue-500 outline-none"
                         value={formData.name}
                         onChange={e => setFormData({...formData, name: e.target.value})}
                         placeholder="Template Name"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-secondary mb-1">CHANNEL</label>
+                      <label className="block text-xs font-semibold text-secondary mb-1">CHANNEL *</label>
                       <select 
-                        className="w-full bg-card border border-color rounded-lg px-4 py-1 text-primary focus:ring-2 focus:ring-blue-300 outline-none"
+                        className="w-full bg-card border border-color rounded-lg px-4 py-2 text-primary focus:ring-2 focus:ring-blue-500 outline-none"
                         value={formData.type}
-                        onChange={e => setFormData({...formData, type: e.target.value})}
+                        onChange={e => setFormData({...formData, type: e.target.value as 'EMAIL' | 'SMS' | 'PUSH'})}
                       >
                         <option value="EMAIL">Email</option>
                         <option value="SMS">SMS</option>
@@ -300,11 +405,22 @@ const TemplatesPage: React.FC = () => {
                     </div>
                   </div>
 
+                  {formData.type === 'EMAIL' && (
+                    <div>
+                      <label className="block text-xs font-semibold text-secondary mb-1">SUBJECT</label>
+                      <input 
+                        className="w-full bg-card border border-color rounded-lg px-4 py-2 text-primary focus:ring-2 focus:ring-blue-500 outline-none"
+                        value={formData.subject}
+                        onChange={e => setFormData({...formData, subject: e.target.value})}
+                        placeholder="Email Subject"
+                      />
+                    </div>
+                  )}
+
                   <div>
                     <label className="block text-xs font-semibold text-secondary mb-2">QUICK VARIABLES</label>
                     <div className="flex gap-2 flex-wrap">
-                      {/* Fix: Renamed variable in map to 'vKey' to avoid 'name' conflict */}
-                      {['name', 'email', 'company', 'date'].map(vKey => (
+                      {['name', 'email', 'company', 'date', 'amount', 'invoice_number'].map(vKey => (
                         <button 
                           key={vKey}
                           onClick={() => insertVariable(vKey)}
@@ -317,14 +433,34 @@ const TemplatesPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-secondary mb-1">CONTENT</label>
+                    <label className="block text-xs font-semibold text-secondary mb-1">
+                      CONTENT {formData.type !== 'EMAIL' && '*'}
+                    </label>
                     <textarea 
-                      className="w-full h-64 bg-gray-50 dark:bg-gray-500 border border-color rounded-lg p-4 font-mono text-sm text-primary focus:ring-2 focus:ring-blue-300 outline-none resize-none"
-                      value={formData.content}
-                      onChange={e => setFormData({...formData, content: e.target.value})}
-                      placeholder="Message content..."
+                      className="w-full h-64 bg-gray-50 dark:bg-gray-900 border border-color rounded-lg p-4 font-mono text-sm text-primary focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                      value={formData.type === 'EMAIL' ? formData.htmlBody : formData.content}
+                      onChange={e => {
+                        if (formData.type === 'EMAIL') {
+                          setFormData({...formData, htmlBody: e.target.value});
+                        } else {
+                          setFormData({...formData, content: e.target.value});
+                        }
+                      }}
+                      placeholder={formData.type === 'EMAIL' ? "HTML email content..." : "Message content..."}
                     />
                   </div>
+
+                  {formData.type === 'EMAIL' && (
+                    <div>
+                      <label className="block text-xs font-semibold text-secondary mb-1">TEXT VERSION (Optional)</label>
+                      <textarea 
+                        className="w-full h-32 bg-gray-50 dark:bg-gray-900 border border-color rounded-lg p-4 font-mono text-sm text-primary focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                        value={formData.textBody}
+                        onChange={e => setFormData({...formData, textBody: e.target.value})}
+                        placeholder="Plain text version for email clients..."
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -345,15 +481,26 @@ const TemplatesPage: React.FC = () => {
                   <div className="p-6 flex-1 overflow-y-auto">
                     {formData.type === 'EMAIL' ? (
                       <div className="space-y-4">
-                         <div className="h-4 w-12 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                         <div className="h-8 w-3/4 bg-gray-200 dark:bg-gray-700 rounded mb-6"></div>
+                         <div className="h-4 w-1/2 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                         <div className="h-6 w-3/4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                         <div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
                          <div className="text-sm text-primary whitespace-pre-wrap">
-                           {formData.content || "Your email content will appear here..."}
+                           {formData.htmlBody || formData.content || "Your email content will appear here..."}
                          </div>
                       </div>
+                    ) : formData.type === 'SMS' ? (
+                      <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-xl max-w-[80%] ml-auto">
+                        <p className="text-sm text-primary whitespace-pre-wrap">{formData.content || "SMS message preview..."}</p>
+                      </div>
                     ) : (
-                      <div className="bg-gray-100 dark:bg-gray-700/50 p-3 rounded-xl max-w-[90%]">
-                        <p className="text-sm text-primary whitespace-pre-wrap">{formData.content || "Message preview..."}</p>
+                      <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-xl">
+                        <div className="flex items-start space-x-2">
+                          <BellIcon className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium text-primary">Notification</p>
+                            <p className="text-sm text-primary whitespace-pre-wrap mt-1">{formData.content || "Push notification preview..."}</p>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -361,16 +508,17 @@ const TemplatesPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-color bg-gray-50 dark:bg-gray-800/50 flex justify-end gap-14">
+            <div className="px-6 py-4 border-t border-color bg-gray-50 dark:bg-gray-800/50 flex justify-end space-x-3">
               <button 
                 onClick={() => setShowModal(false)}
-                className="px-6 py-2 bg-red-500 hover:bg-red-700 text-white rounded-lg font-medium shadow-md transition-transform active:scale-95"
+                className="px-6 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg font-medium hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
               >
                 Cancel
               </button>
               <button 
                 onClick={handleSubmit}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-md transition-transform active:scale-95"
+                disabled={!formData.name || (formData.type !== 'EMAIL' && !formData.content)}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isEditMode ? 'Save Changes' : 'Create Template'}
               </button>
