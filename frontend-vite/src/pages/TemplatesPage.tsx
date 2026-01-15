@@ -20,7 +20,7 @@ import {
 interface Template {
   id: string; // Changed to string for UUID
   name: string;
-  type: string; 
+  type?: string; 
   content?: string;
   subject?: string;
   htmlBody?: string;
@@ -58,54 +58,85 @@ const TemplatesPage: React.FC = () => {
 
   // 1. FETCH TEMPLATES FROM BACKEND
   const fetchTemplates = async () => {
-    if (!token) {
-      console.log('No token available');
-      return;
+  if (!token) {
+    console.log('No token available');
+    setError('Please login first');
+    return;
+  }
+  
+  try {
+    setIsLoading(true);
+    setError('');
+    console.log('🔍 Fetching templates...');
+    
+    const response = await fetch('http://localhost:3001/templates', {
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('📡 Status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ HTTP Error:', response.status, errorText);
+      throw new Error(`Failed to fetch templates: ${response.status}`);
     }
     
-    try {
-      setIsLoading(true);
-      console.log('Fetching templates with token:', token.substring(0, 20) + '...');
-      
-      const response = await fetch('http://localhost:3001/templates', {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      console.log('Response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-        throw new Error(`Failed to fetch templates: ${response.status} ${errorText}`);
-      }
-      
-      const data = await response.json();
-      console.log('Raw API response:', data);
-      
-      // Process the response
-      let templatesArray: Template[] = [];
-      if (Array.isArray(data)) {
-        templatesArray = data;
-      } else if (data && Array.isArray(data.data)) {
-        templatesArray = data.data;
-      } else if (data && Array.isArray(data.templates)) {
-        templatesArray = data.templates;
-      }
-      
-      console.log('Processed templates:', templatesArray);
-      setTemplates(templatesArray);
-      setError('');
-      
-    } catch (err) {
-      console.error('Error fetching templates:', err);
-      setError(`Could not load templates: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    } finally {
-      setIsLoading(false);
+    const data = await response.json();
+    console.log('✅ API Response:', data);
+    
+    // Extract templates array from response
+    let templatesArray: any[] = [];
+    
+    if (data && data.templates && Array.isArray(data.templates)) {
+      // Format: { templates: [...] }
+      templatesArray = data.templates;
+      console.log(`✅ Found ${templatesArray.length} templates in "templates" property`);
+    } else if (Array.isArray(data)) {
+      // Format: [...]
+      templatesArray = data;
+      console.log(`✅ Found ${templatesArray.length} templates in direct array`);
+    } else if (data && data.data && Array.isArray(data.data)) {
+      // Format: { data: [...] }
+      templatesArray = data.data;
+      console.log(`✅ Found ${templatesArray.length} templates in "data" property`);
+    } else {
+      console.warn('⚠️ Unexpected response format:', data);
+      templatesArray = [];
     }
-  };
+    
+    // Map to your Template interface
+    const mappedTemplates: Template[] = templatesArray.map(item => ({
+      id: item.id || '',
+      name: item.name || 'Unnamed Template',
+      type: item.type || 'EMAIL',
+      content: item.content || item.htmlBody || '',
+      subject: item.subject || '',
+      htmlBody: item.htmlBody || '',
+      textBody: item.textBody || '',
+      variables: item.variables || [],
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt
+    }));
+    
+    console.log('✅ Mapped templates:', mappedTemplates);
+    setTemplates(mappedTemplates);
+    
+    if (mappedTemplates.length === 0) {
+      console.log('ℹ️ No templates found in database');
+    }
+    
+  } catch (err) {
+    console.error('❌ Error fetching templates:', err);
+    setError(`Could not load templates: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    setTemplates([]);
+  } finally {
+    setIsLoading(false);
+    console.log('🏁 Loading completed');
+  }
+};
 
   useEffect(() => {
     if (token) {
