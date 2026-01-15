@@ -18,6 +18,8 @@ const LoginPage: React.FC = () => {
     setError('');
     
     try {
+      console.log('🔐 Attempting login with:', { email, password: '***' });
+      
       // Make REAL API call to your backend
       const response = await fetch('http://localhost:3001/auth/login', {
         method: 'POST',
@@ -27,46 +29,56 @@ const LoginPage: React.FC = () => {
         body: JSON.stringify({ email, password }),
       });
 
+      console.log('📡 Login response status:', response.status);
+      
       const data = await response.json();
+      console.log('✅ Login response data:', data);
       
       if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
+        throw new Error(data.message || `Login failed: ${response.status}`);
       }
       
-      // Check what your backend actually returns
-      console.log('Login response:', data);
-      
-      // Adjust based on your backend response structure:
-      // Option 1: If backend returns { user, access_token }
-      if (data.access_token && data.user) {
-        login(data.access_token, data.user);
+      // Your backend returns: { user, accessToken, refreshToken }
+      // Note: It's accessToken (camelCase), not access_token (snake_case)
+      if (data.accessToken && data.user) {
+        console.log('✅ Found accessToken and user');
+        console.log('🔑 Token:', data.accessToken.substring(0, 50) + '...');
+        console.log('👤 User:', data.user);
+        
+        login(data.accessToken, data.user);
         navigate('/dashboard');
       } 
-      // Option 2: If backend returns { token, ...userData }
-      else if (data.token) {
-        login(data.token, { 
-          id: data.id, 
-          name: data.name, 
+      // If backend returns access_token (snake_case)
+      else if (data.access_token && data.user) {
+        console.log('✅ Found access_token and user');
+        login(data.access_token, data.user);
+        navigate('/dashboard');
+      }
+      // If backend returns just token
+      else if (data.token && data.user) {
+        console.log('✅ Found token and user');
+        login(data.token, data.user);
+        navigate('/dashboard');
+      }
+      // If user data is embedded in root
+      else if (data.accessToken && data.id) {
+        console.log('✅ Found accessToken with embedded user data');
+        login(data.accessToken, {
+          id: data.id,
+          name: data.name,
           email: data.email,
-          // include other user fields your backend returns
+          role: data.role,
         });
         navigate('/dashboard');
       }
-      // Option 3: If token is in Authorization header
       else {
-        const authHeader = response.headers.get('Authorization');
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-          const token = authHeader.substring(7);
-          login(token, data);
-          navigate('/dashboard');
-        } else {
-          throw new Error('No token received from server');
-        }
+        console.error('❌ No valid token structure found in response:', data);
+        throw new Error('Invalid login response format from server');
       }
       
     } catch (err) {
-      console.error('Login error:', err);
-      setError(err instanceof Error ? err.message : 'Login failed');
+      console.error('❌ Login error:', err);
+      setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -105,7 +117,7 @@ const LoginPage: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="block w-full pl-10 pr-3 py-3 bg-primary border border-color rounded-xl text-primary placeholder-gray-400 focus:ring-2 focus:ring-blue-600 outline-none transition-all"
-                  placeholder="admin@example.com"
+                  placeholder="admin@birdview.com"
                 />
               </div>
             </div>
@@ -122,33 +134,51 @@ const LoginPage: React.FC = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="block w-full pl-10 pr-3 py-3 bg-primary border border-color rounded-xl text-primary placeholder-gray-400 focus:ring-2 focus:ring-blue-600 outline-none transition-all"
-                  placeholder="••••••••"
+                  placeholder="admin123"
                 />
               </div>
             </div>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <input type="checkbox" className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" />
-                <label className="ml-2 block text-sm text-secondary">Remember me</label>
+                <input 
+                  id="remember-me" 
+                  name="remember-me" 
+                  type="checkbox" 
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-secondary">
+                  Remember me
+                </label>
               </div>
               <div className="text-sm">
-                <a href="#" className="font-semibold text-blue-500 hover:text-blue-600">Forgot password?</a>
+                <a href="#" className="font-semibold text-blue-500 hover:text-blue-600">
+                  Forgot password?
+                </a>
               </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-all"
+              className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-all"
             >
               {loading ? (
-                <div className="flex items-center">
+                <>
                   <div className="animate-spin h-5 w-5 border-2 border-white/30 border-t-white rounded-full mr-2" />
                   Signing in...
-                </div>
+                </>
               ) : 'Sign In'}
             </button>
+
+            {/* Test credentials hint */}
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-xs text-blue-800 dark:text-blue-300 text-center">
+                <strong>Test Credentials:</strong><br />
+                Email: admin@birdview.com<br />
+                Password: admin123
+              </p>
+            </div>
           </form>
         </div>
       </div>

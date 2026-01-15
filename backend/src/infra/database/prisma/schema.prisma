@@ -18,6 +18,8 @@ model Notification {
   canceledAt  DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  bulkListId  String?
+  bulkList    BulkList? @relation(fields: [bulkListId], references: [id])
   recipient   Recipient @relation(fields: [recipientId], references: [id])
 }
 
@@ -26,12 +28,13 @@ model Recipient {
   name          String
   email         String         @unique
   phone         String?
+  status        String         @default("active")
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   notifications Notification[]
+  bulkLists     BulkList[]     @relation("BulkListRecipients")
 }
 
-// Update your schema.prisma
 model EmailTemplate {
   id        String   @id @default(uuid())
   name      String   @unique
@@ -39,23 +42,67 @@ model EmailTemplate {
   htmlBody  String
   textBody  String?
   variables String[]
-  type      String   @default("EMAIL") // ADD THIS
+  type      String   @default("EMAIL")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  bulkJobs  BulkNotificationJob[]
 }
 
 model User {
-  id                   String    @id @default(uuid())
-  email                String    @unique
+  id                   String                  @id @default(uuid())
+  email                String                  @unique
   password             String
   name                 String
-  role                 String    @default("user")
-  isVerified           Boolean   @default(false)
+  role                 String                  @default("user")
+  isVerified           Boolean                 @default(false)
   verificationToken    String?
   resetPasswordToken   String?
   resetPasswordExpires DateTime?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  bulkLists            BulkList[]
+  bulkJobs             BulkNotificationJob[]
 
   @@map("users")
+}
+
+model BulkList {
+  id          String                  @id @default(uuid())
+  name        String
+  description String?
+  filename    String?
+  totalRecipients Int                 @default(0)
+  processedRecipients Int             @default(0)
+  status      String                  @default("pending") // pending, processing, completed, failed
+  userId      String
+  user        User                    @relation(fields: [userId], references: [id])
+  recipients  Recipient[]             @relation("BulkListRecipients")
+  notifications Notification[]
+  jobs        BulkNotificationJob[]
+  isActive    Boolean                 @default(true)
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+}
+
+model BulkNotificationJob {
+  id          String        @id @default(uuid())
+  name        String
+  description String?
+  templateId  String
+  template    EmailTemplate @relation(fields: [templateId], references: [id])
+  bulkListId  String?
+  bulkList    BulkList?     @relation(fields: [bulkListId], references: [id])
+  status      String        @default("pending") // pending, processing, completed, failed
+  totalRecipients Int       @default(0)
+  processedRecipients Int   @default(0)
+  successCount Int          @default(0)
+  failureCount Int          @default(0)
+  variables   Json?         // Store template variables
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
