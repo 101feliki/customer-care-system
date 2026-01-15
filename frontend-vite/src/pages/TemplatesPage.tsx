@@ -18,11 +18,16 @@ import {
 
 // --- Types matching your NestJS Backend ---
 interface Template {
-  id: number;
+  id: string ;
   name: string;
-  type: string; 
-  content: string;
+  type: string; // EMAIL, SMS, PUSH
+  content: string; // For SMS/PUSH
+  subject?: string; // For email only
+  htmlBody?: string; // For email only
+  textBody?: string; // For email only
+  variables?: string[];
   createdAt?: string;
+  updatedAt?: string;
 }
 
 const TemplatesPage: React.FC = () => {
@@ -43,7 +48,7 @@ const TemplatesPage: React.FC = () => {
   // --- Form State ---
   // Explicitly typing name as string to avoid global 'window.name' conflicts
   const [formData, setFormData] = useState({
-    id: 0,
+    id: '',
     name: '' as string,
     type: 'EMAIL',
     content: ''
@@ -232,7 +237,7 @@ const TemplatesPage: React.FC = () => {
                     <p className="text-secondary font-mono text-xs leading-relaxed">
                       {template.content}
                     </p>
-                    <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-gray-50 dark:from-gray-900 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 w-full h-8 bg-linear-to-t from-gray-50 dark:from-gray-900 to-transparent"></div>
                   </div>
 
                   <div className="flex justify-between items-center text-xs text-secondary mt-2">
