@@ -32,18 +32,16 @@ model Recipient {
 }
 
 // Update your schema.prisma
-model Template {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  type        String   // EMAIL, SMS, PUSH
-  subject     String?  // For email only
-  content     String   // For SMS/PUSH, or text version
-  htmlBody    String?  // For email only
-  variables   String[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  @@map("templates")
+model EmailTemplate {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  subject   String
+  htmlBody  String
+  textBody  String?
+  variables String[]
+  type      String   @default("EMAIL") // ADD THIS
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model User {
