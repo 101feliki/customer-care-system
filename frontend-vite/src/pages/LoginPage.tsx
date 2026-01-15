@@ -171,14 +171,6 @@ const LoginPage: React.FC = () => {
               ) : 'Sign In'}
             </button>
 
-            {/* Test credentials hint */}
-            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <p className="text-xs text-blue-800 dark:text-blue-300 text-center">
-                <strong>Test Credentials:</strong><br />
-                Email: admin@birdview.com<br />
-                Password: admin123
-              </p>
-            </div>
           </form>
         </div>
       </div>

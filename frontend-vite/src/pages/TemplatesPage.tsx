@@ -571,7 +571,7 @@ const TemplatesPage: React.FC = () => {
                     <p className="text-secondary font-mono text-xs leading-relaxed">
                       {getTemplateContent(template)}
                     </p>
-                    <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-gray-50 dark:from-gray-900 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 w-full h-8 bg-linear-to-t from-gray-50 dark:from-gray-900 to-transparent"></div>
                   </div>
 
                   <div className="flex justify-between items-center text-xs text-secondary mt-2">
@@ -889,7 +889,7 @@ const TemplatesPage: React.FC = () => {
               <button 
                 onClick={sendNotification}
                 disabled={isSending || selectedRecipients.length === 0}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center min-w-[200px]"
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center min-w-50"
               >
                 {isSending ? (
                   <>
