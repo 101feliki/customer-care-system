@@ -59,6 +59,7 @@ export class AuthController {
   async refreshToken(@Body('refreshToken') refreshToken: string) {
     return this.authService.refreshToken(refreshToken);
   }
+  
 
   @Get('verify-email/:token')
   async verifyEmail(@Param('token') token: string) {

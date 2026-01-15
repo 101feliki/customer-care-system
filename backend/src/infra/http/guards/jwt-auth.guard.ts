@@ -1,35 +1,32 @@
+// backend/src/infra/http/guards/jwt-auth.guard.ts
 import { Injectable, ExecutionContext, UnauthorizedException } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { JwtService } from '@nestjs/jwt';
+import * as jwt from 'jsonwebtoken';
 
 @Injectable()
-export class JwtAuthGuard extends AuthGuard('jwt') {
-  constructor(private jwtService: JwtService) {
-    super();
-  }
-
-  canActivate(context: ExecutionContext) {
+export class JwtAuthGuard {
+  canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
     
     if (!token) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('No token provided');
     }
 
     try {
-      const payload = this.jwtService.verify(token, {
-        secret: process.env.JWT_SECRET,
-      });
-      
-      request.user = payload;
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+      request.user = decoded;
       return true;
-    } catch {
-      throw new UnauthorizedException();
+    } catch (error) {
+      console.error('JWT verification error:', error);
+      throw new UnauthorizedException('Invalid or expired token');
     }
   }
 
   private extractTokenFromHeader(request: any): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    const authHeader = request.headers.authorization;
+    if (!authHeader) return undefined;
+    
+    const [type, token] = authHeader.split(' ');
     return type === 'Bearer' ? token : undefined;
   }
 }
