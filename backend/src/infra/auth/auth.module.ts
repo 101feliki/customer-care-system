@@ -11,7 +11,7 @@ import { JwtStrategy } from '../strategies/jwt.strategy';
     DatabaseModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '15m' },
+      signOptions: { expiresIn: '7d' }, // Changed from '15m' to '7d'
     }),
   ],
   controllers: [AuthController],
@@ -19,4 +19,3 @@ import { JwtStrategy } from '../strategies/jwt.strategy';
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}
-
