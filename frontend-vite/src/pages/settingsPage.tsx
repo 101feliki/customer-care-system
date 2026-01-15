@@ -52,7 +52,7 @@ const SettingsPage: React.FC = () => {
 
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Header */}
-        <header className="bg-card border-b border-color flex-shrink-0 sticky top-0 z-20">
+        <header className="bg-card border-b border-color shrink-0 sticky top-0 z-20">
           <div className="px-6 py-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
@@ -139,7 +139,7 @@ const SettingsPage: React.FC = () => {
                             checked={(notificationSettings as any)[item.key]} 
                             onChange={(e) => setNotificationSettings(p => ({...p, [item.key]: e.target.checked}))} 
                           />
-                          <div className="w-11 h-6 bg-gray-300 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                          <div className="w-11 h-6 bg-gray-300 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
                         </label>
                       </div>
                     ))}

@@ -13,12 +13,13 @@ import {
   ChatBubbleBottomCenterTextIcon, 
   BellIcon,
   XMarkIcon,
-  EyeIcon
+  EyeIcon,
+  PaperAirplaneIcon
 } from '@heroicons/react/24/outline';
 
 // --- Types matching your NestJS Backend ---
 interface Template {
-  id: string; // Changed to string for UUID
+  id: string;
   name: string;
   type?: string; 
   content?: string;
@@ -28,6 +29,16 @@ interface Template {
   variables?: string[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+
+
+interface Recipient {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  status?: string;
 }
 
 const TemplatesPage: React.FC = () => {
@@ -42,6 +53,7 @@ const TemplatesPage: React.FC = () => {
   // --- UI State ---
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showSendModal, setShowSendModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
 
   // --- Form State ---
@@ -56,87 +68,146 @@ const TemplatesPage: React.FC = () => {
     variables: ['name', 'email', 'company', 'date'] as string[],
   });
 
+  // --- Send Modal State ---
+  const [selectedTemplateForSend, setSelectedTemplateForSend] = useState<Template | null>(null);
+  const [recipients, setRecipients] = useState<Recipient[]>([]);
+  const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
+  const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState('');
+  const [variableValues, setVariableValues] = useState<Record<string, string>>({});
+
   // 1. FETCH TEMPLATES FROM BACKEND
   const fetchTemplates = async () => {
-  if (!token) {
-    console.log('No token available');
-    setError('Please login first');
-    return;
-  }
-  
-  try {
-    setIsLoading(true);
-    setError('');
-    console.log('🔍 Fetching templates...');
+    if (!token) {
+      console.log('❌ No token available');
+      setError('Please login first');
+      setIsLoading(false);
+      return;
+    }
     
-    const response = await fetch('http://localhost:3001/templates', {
-      headers: { 
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+    try {
+      setIsLoading(true);
+      setError('');
+      console.log('🔍 Fetching templates...');
+      
+      const response = await fetch('http://localhost:3001/templates', {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('📡 Status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ HTTP Error:', response.status, errorText);
+        throw new Error(`Failed to fetch templates: ${response.status}`);
       }
-    });
-    
-    console.log('📡 Status:', response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ HTTP Error:', response.status, errorText);
-      throw new Error(`Failed to fetch templates: ${response.status}`);
+      
+      const data = await response.json();
+      console.log('✅ API Response:', data);
+      
+      // Extract templates array from response
+      let templatesArray: any[] = [];
+      
+      if (data && data.templates && Array.isArray(data.templates)) {
+        templatesArray = data.templates;
+        console.log(`✅ Found ${templatesArray.length} templates in "templates" property`);
+      } else if (Array.isArray(data)) {
+        templatesArray = data;
+        console.log(`✅ Found ${templatesArray.length} templates in direct array`);
+      } else if (data && data.data && Array.isArray(data.data)) {
+        templatesArray = data.data;
+        console.log(`✅ Found ${templatesArray.length} templates in "data" property`);
+      } else {
+        console.warn('⚠️ Unexpected response format:', data);
+        templatesArray = [];
+      }
+      
+      // Map to your Template interface
+      const mappedTemplates: Template[] = templatesArray.map(item => ({
+        id: item.id || '',
+        name: item.name || 'Unnamed Template',
+        type: item.type || 'EMAIL',
+        content: item.content || item.htmlBody || '',
+        subject: item.subject || '',
+        htmlBody: item.htmlBody || '',
+        textBody: item.textBody || '',
+        variables: item.variables || [],
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt
+      }));
+      
+      console.log('✅ Mapped templates:', mappedTemplates);
+      setTemplates(mappedTemplates);
+      
+      if (mappedTemplates.length === 0) {
+        console.log('ℹ️ No templates found in database');
+      }
+      
+    } catch (err) {
+      console.error('❌ Error fetching templates:', err);
+      setError(`Could not load templates: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setTemplates([]);
+    } finally {
+      setIsLoading(false);
+      console.log('🏁 Loading completed');
+    }
+  };
+
+  // 2. FETCH RECIPIENTS FOR SENDING
+  const fetchRecipients = async () => {
+    if (!token) {
+      console.log('❌ No token for fetching recipients');
+      return;
     }
     
-    const data = await response.json();
-    console.log('✅ API Response:', data);
-    
-    // Extract templates array from response
-    let templatesArray: any[] = [];
-    
-    if (data && data.templates && Array.isArray(data.templates)) {
-      // Format: { templates: [...] }
-      templatesArray = data.templates;
-      console.log(`✅ Found ${templatesArray.length} templates in "templates" property`);
-    } else if (Array.isArray(data)) {
-      // Format: [...]
-      templatesArray = data;
-      console.log(`✅ Found ${templatesArray.length} templates in direct array`);
-    } else if (data && data.data && Array.isArray(data.data)) {
-      // Format: { data: [...] }
-      templatesArray = data.data;
-      console.log(`✅ Found ${templatesArray.length} templates in "data" property`);
-    } else {
-      console.warn('⚠️ Unexpected response format:', data);
-      templatesArray = [];
+    try {
+      console.log('🔍 Fetching recipients...');
+      
+      const response = await fetch('http://localhost:3001/recipients', {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('📡 Recipients status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error fetching recipients:', errorText);
+        return;
+      }
+      
+      const data = await response.json();
+      console.log('✅ Recipients response:', data);
+      
+      // Handle different response formats
+      let recipientsArray: any[] = [];
+      
+      if (Array.isArray(data)) {
+        recipientsArray = data;
+      } else if (data && data.recipients && Array.isArray(data.recipients)) {
+        recipientsArray = data.recipients;
+      } else if (data && data.data && Array.isArray(data.data)) {
+        recipientsArray = data.data;
+      }
+      
+      console.log(`✅ Found ${recipientsArray.length} recipients`);
+      setRecipients(recipientsArray.map(recipient => ({
+        id: recipient.id || '',
+        name: recipient.name || 'Unknown',
+        email: recipient.email || '',
+        phone: recipient.phone || '',
+        status: recipient.status || 'active'
+      })));
+      
+    } catch (err) {
+      console.error('❌ Error fetching recipients:', err);
     }
-    
-    // Map to your Template interface
-    const mappedTemplates: Template[] = templatesArray.map(item => ({
-      id: item.id || '',
-      name: item.name || 'Unnamed Template',
-      type: item.type || 'EMAIL',
-      content: item.content || item.htmlBody || '',
-      subject: item.subject || '',
-      htmlBody: item.htmlBody || '',
-      textBody: item.textBody || '',
-      variables: item.variables || [],
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt
-    }));
-    
-    console.log('✅ Mapped templates:', mappedTemplates);
-    setTemplates(mappedTemplates);
-    
-    if (mappedTemplates.length === 0) {
-      console.log('ℹ️ No templates found in database');
-    }
-    
-  } catch (err) {
-    console.error('❌ Error fetching templates:', err);
-    setError(`Could not load templates: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    setTemplates([]);
-  } finally {
-    setIsLoading(false);
-    console.log('🏁 Loading completed');
-  }
-};
+  };
 
   useEffect(() => {
     if (token) {
@@ -144,10 +215,15 @@ const TemplatesPage: React.FC = () => {
     }
   }, [token]);
 
-  // 2. CREATE OR UPDATE TEMPLATE
+  // 3. CREATE OR UPDATE TEMPLATE
   const handleSubmit = async () => {
     if (!formData.name) {
       alert('Name is required');
+      return;
+    }
+
+    if (!token) {
+      alert('Please login first');
       return;
     }
 
@@ -193,7 +269,7 @@ const TemplatesPage: React.FC = () => {
         method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(requestBody)
       });
@@ -214,14 +290,22 @@ const TemplatesPage: React.FC = () => {
     }
   };
 
-  // 3. DELETE TEMPLATE
+  // 4. DELETE TEMPLATE
   const handleDelete = async (id: string) => {
+    if (!token) {
+      alert('Please login first');
+      return;
+    }
+    
     if(!window.confirm('Are you sure you want to delete this template?')) return;
 
     try {
       const response = await fetch(`http://localhost:3001/templates/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
       
       if (response.ok) {
@@ -234,6 +318,109 @@ const TemplatesPage: React.FC = () => {
     } catch (err) {
       console.error('Delete error:', err);
       alert('Failed to delete template');
+    }
+  };
+
+  // 5. SEND TEMPLATE TO RECIPIENTS - FIXED VERSION
+  const handleSendTemplate = (template: Template) => {
+    setSelectedTemplateForSend(template);
+    setVariableValues({});
+    setSelectedRecipients([]);
+    setSendError('');
+    fetchRecipients();
+    setShowSendModal(true);
+  };
+
+  const sendNotification = async () => {
+    if (!selectedTemplateForSend || !token) return;
+    
+    if (selectedRecipients.length === 0) {
+      setSendError('Please select at least one recipient');
+      return;
+    }
+
+    setIsSending(true);
+    setSendError('');
+
+    try {
+      // Filter recipients to only include selected ones with their details
+      const selectedRecipientDetails = recipients.filter(recipient => 
+        selectedRecipients.includes(recipient.id)
+      );
+
+      // Prepare payload for bulk notifications endpoint
+      const payload = {
+        templateId: selectedTemplateForSend.id,
+        channel: (selectedTemplateForSend.type || 'EMAIL').toLowerCase() as 'email' | 'sms',
+        recipients: selectedRecipientDetails.map(recipient => ({
+          recipientId: recipient.id,
+          email: recipient.email,
+          phone: recipient.phone,
+          variables: {
+            name: recipient.name,
+            email: recipient.email,
+            ...variableValues
+          }
+        })),
+        variables: variableValues
+      };
+
+      console.log('📤 Sending notification with payload:', payload);
+
+      // Use the bulk notifications endpoint
+      const response = await fetch('http://localhost:3001/bulk-notifications/send', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      console.log('📡 Response status:', response.status);
+      
+      const responseText = await response.text();
+      console.log('📡 Response text:', responseText);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to send: ${response.status} - ${responseText}`);
+      }
+
+      // Parse response
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch {
+        responseData = { message: 'Notification sent successfully!' };
+      }
+
+      alert(`✅ ${responseData.message || `Notifications sent to ${selectedRecipientDetails.length} recipient(s)!`}`);
+      setShowSendModal(false);
+      
+    } catch (error) {
+      console.error('❌ Error sending notification:', error);
+      
+      // User-friendly error messages
+      let errorMsg = 'Failed to send notification';
+      if (error instanceof Error) {
+        if (error.message.includes('404')) {
+          errorMsg = 'Send endpoint not found. Please check backend routes.';
+        } else if (error.message.includes('401') || error.message.includes('403')) {
+          errorMsg = 'Authentication failed. Please login again.';
+        } else if (error.message.includes('Network')) {
+          errorMsg = 'Network error. Check backend is running on localhost:3001.';
+        } else if (error.message.includes('recipients is not iterable')) {
+          errorMsg = 'Invalid recipients format. Please try again.';
+        } else if (error.message.includes('Mail delivery failed')) {
+          errorMsg = 'Email service is currently unavailable. Notifications were saved but not sent.';
+        } else {
+          errorMsg = error.message;
+        }
+      }
+      
+      setSendError(errorMsg);
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -276,7 +463,7 @@ const TemplatesPage: React.FC = () => {
     }));
   };
 
-  const getIcon = (type: string) => {
+  const getIcon = (type: string = 'EMAIL') => {
     if(type === 'SMS') return <ChatBubbleBottomCenterTextIcon className="h-5 w-5 text-green-500"/>;
     if(type === 'PUSH') return <BellIcon className="h-5 w-5 text-purple-500"/>;
     return <EnvelopeIcon className="h-5 w-5 text-blue-500"/>;
@@ -350,16 +537,31 @@ const TemplatesPage: React.FC = () => {
                       <div>
                         <h3 className="font-bold text-primary">{template.name}</h3>
                         <span className="text-xs font-mono text-secondary bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">
-                          {template.type}
+                          {template.type || 'EMAIL'}
                         </span>
                       </div>
                     </div>
                     
                     <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => openModal(template)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-blue-500">
+                      <button 
+                        onClick={() => handleSendTemplate(template)}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-green-500"
+                        title="Send this template"
+                      >
+                        <PaperAirplaneIcon className="h-4 w-4" />
+                      </button>
+                      <button 
+                        onClick={() => openModal(template)} 
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-blue-500"
+                        title="Edit template"
+                      >
                         <PencilIcon className="h-4 w-4" />
                       </button>
-                      <button onClick={() => handleDelete(template.id)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-red-500">
+                      <button 
+                        onClick={() => handleDelete(template.id)} 
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-red-500"
+                        title="Delete template"
+                      >
                         <TrashIcon className="h-4 w-4" />
                       </button>
                     </div>
@@ -373,17 +575,17 @@ const TemplatesPage: React.FC = () => {
                   </div>
 
                   <div className="flex justify-between items-center text-xs text-secondary mt-2">
-                     <span>ID: #{template.id.substring(0, 8)}...</span>
-                     <button 
-                       onClick={() => navigator.clipboard.writeText(
-                         template.type === 'EMAIL' 
-                           ? template.htmlBody || template.content || '' 
-                           : template.content || ''
-                       )}
-                       className="flex items-center hover:text-primary"
-                     >
-                       <ClipboardIcon className="h-3 w-3 mr-1" /> Copy
-                     </button>
+                    <span>ID: #{template.id.substring(0, 8)}...</span>
+                    <button 
+                      onClick={() => navigator.clipboard.writeText(
+                        template.type === 'EMAIL' 
+                          ? template.htmlBody || template.content || '' 
+                          : template.content || ''
+                      )}
+                      className="flex items-center hover:text-primary"
+                    >
+                      <ClipboardIcon className="h-3 w-3 mr-1" /> Copy
+                    </button>
                   </div>
                 </div>
               ))}
@@ -392,7 +594,7 @@ const TemplatesPage: React.FC = () => {
         </main>
       </div>
 
-      {/* --- MODAL --- */}
+      {/* --- CREATE/EDIT TEMPLATE MODAL --- */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-card w-full max-w-5xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
@@ -552,6 +754,154 @@ const TemplatesPage: React.FC = () => {
                 className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isEditMode ? 'Save Changes' : 'Create Template'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- SEND TEMPLATE MODAL --- */}
+      {showSendModal && selectedTemplateForSend && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+            
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-blue-600 dark:bg-blue-800 text-white">
+              <div>
+                <h2 className="text-xl font-bold">Send Template</h2>
+                <p className="text-sm opacity-90">{selectedTemplateForSend.name}</p>
+              </div>
+              <button 
+                onClick={() => setShowSendModal(false)}
+                className="p-2 hover:bg-blue-700 rounded-full transition-colors"
+                disabled={isSending}
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              {sendError && (
+                <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300 rounded-lg border border-red-200 dark:border-red-800">
+                  {sendError}
+                </div>
+              )}
+
+              {/* Recipients Selection */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Select Recipients</h3>
+                <div className="max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-900/50">
+                  {recipients.length === 0 ? (
+                    <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+                      No recipients available. Please create recipients first.
+                    </p>
+                  ) : (
+                    recipients.map(recipient => (
+                      <div key={recipient.id} className="flex items-center py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
+                        <input
+                          type="checkbox"
+                          id={`recipient-${recipient.id}`}
+                          checked={selectedRecipients.includes(recipient.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedRecipients(prev => [...prev, recipient.id]);
+                            } else {
+                              setSelectedRecipients(prev => prev.filter(id => id !== recipient.id));
+                            }
+                          }}
+                          className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                          disabled={isSending}
+                        />
+                        <label htmlFor={`recipient-${recipient.id}`} className="ml-3 flex-1 cursor-pointer">
+                          <div className="font-medium text-gray-900 dark:text-white">{recipient.name}</div>
+                          <div className="text-sm text-gray-600 dark:text-gray-300">{recipient.email}</div>
+                          {recipient.phone && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{recipient.phone}</div>
+                          )}
+                        </label>
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          recipient.status === 'active' 
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+                        }`}>
+                          {recipient.status || 'active'}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                  Selected: {selectedRecipients.length} recipient(s)
+                </p>
+              </div>
+
+              {/* Variable Values */}
+              {selectedTemplateForSend.variables && selectedTemplateForSend.variables.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Template Variables</h3>
+                  <div className="space-y-3">
+                    {selectedTemplateForSend.variables.map(variable => (
+                      <div key={variable} className="flex items-center">
+                        <label className="w-32 text-sm font-medium text-gray-900 dark:text-white">
+                          {variable}:
+                        </label>
+                        <input
+                          type="text"
+                          value={variableValues[variable] || ''}
+                          onChange={(e) => setVariableValues(prev => ({
+                            ...prev,
+                            [variable]: e.target.value
+                          }))}
+                          placeholder={`Enter value for ${variable}`}
+                          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                          disabled={isSending}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Preview */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Preview</h3>
+                <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                    Subject: {selectedTemplateForSend.subject || 'No subject'}
+                  </div>
+                  <div className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap max-h-40 overflow-y-auto">
+                    {selectedTemplateForSend.htmlBody 
+                      ? (selectedTemplateForSend.htmlBody.substring(0, 300) + (selectedTemplateForSend.htmlBody.length > 300 ? '...' : ''))
+                      : selectedTemplateForSend.content?.substring(0, 300) + (selectedTemplateForSend.content && selectedTemplateForSend.content.length > 300 ? '...' : '') || 'No content'
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-end space-x-3">
+              <button 
+                onClick={() => setShowSendModal(false)}
+                className="px-6 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg font-medium hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isSending}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={sendNotification}
+                disabled={isSending || selectedRecipients.length === 0}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center min-w-[200px]"
+              >
+                {isSending ? (
+                  <>
+                    <div className="animate-spin h-5 w-5 border-2 border-white/30 border-t-white rounded-full mr-2" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <PaperAirplaneIcon className="h-5 w-5 mr-2" />
+                    Send to {selectedRecipients.length} Recipient(s)
+                  </>
+                )}
               </button>
             </div>
           </div>
