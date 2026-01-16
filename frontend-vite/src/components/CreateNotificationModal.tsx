@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { CreateNotificationDto } from '../services/notificationService';
+import { SendNotificationDto } from '../services/notificationService'; // Changed from CreateNotificationDto
 
 interface CreateNotificationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (data: CreateNotificationDto) => void;
+  onCreate: (data: SendNotificationDto) => void; // Changed type
 }
 
 const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
@@ -13,18 +13,39 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
   onClose,
   onCreate,
 }) => {
-  const [formData, setFormData] = useState<CreateNotificationDto>({
-    recipientId: '',
-    content: '',
-    category: 'email',
+  // Update state to match SendNotificationDto structure
+  const [formData, setFormData] = useState<SendNotificationDto>({
+    templateId: '', // Added templateId
+    recipientIds: [], // Changed from recipientId to recipientIds (array)
+    variables: {}, // Added variables
+    scheduleFor: undefined, // Added scheduleFor (optional)
   });
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onCreate(formData);
-    setFormData({ recipientId: '', content: '', category: 'email' });
+    
+    // Convert recipientIds string to array
+    const recipientIdsArray = formData.recipientIds as unknown as string; // Type assertion
+    const processedData: SendNotificationDto = {
+      templateId: 'direct-notification', // You might want to handle this differently
+      recipientIds: typeof recipientIdsArray === 'string' 
+        ? recipientIdsArray.split(',').map(id => id.trim()).filter(id => id.length > 0)
+        : [],
+      variables: formData.variables || {},
+      scheduleFor: formData.scheduleFor,
+    };
+    
+    onCreate(processedData);
+    
+    // Reset form with proper SendNotificationDto structure
+    setFormData({
+      templateId: '',
+      recipientIds: [],
+      variables: {},
+      scheduleFor: undefined,
+    });
   };
 
   return (
@@ -43,15 +64,18 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Recipient ID
+              Recipient IDs (comma-separated)
             </label>
             <input
               type="text"
               required
-              value={formData.recipientId}
-              onChange={(e) => setFormData({ ...formData, recipientId: e.target.value })}
+              value={formData.recipientIds as unknown as string} // Type assertion
+              onChange={(e) => setFormData({ 
+                ...formData, 
+                recipientIds: e.target.value as any // Type assertion
+              })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-              placeholder="Enter recipient identifier"
+              placeholder="Enter recipient IDs (user-123, user-456)"
             />
           </div>
           
@@ -59,16 +83,22 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
             <label className="block text-sm font-medium text-gray-700">
               Category
             </label>
+            {/* Since SendNotificationDto doesn't have category, we need to handle differently */}
             <select
-  value={formData.category}
-  onChange={(e) => setFormData({ ...formData, category: e.target.value as 'email' | 'sms' | 'urgent' | 'info' })}
-  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
->
-  <option value="email">Email</option>
-  <option value="sms">SMS</option>
-  <option value="urgent">Urgent</option>
-  <option value="info">Info</option>
-</select>
+              onChange={(e) => {
+                // Store category in variables or handle differently
+                setFormData({ 
+                  ...formData, 
+                  variables: { ...formData.variables, category: e.target.value }
+                });
+              }}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+            >
+              <option value="email">Email</option>
+              <option value="sms">SMS</option>
+              <option value="urgent">Urgent</option>
+              <option value="info">Info</option>
+            </select>
           </div>
           
           <div>
@@ -77,8 +107,13 @@ const CreateNotificationModal: React.FC<CreateNotificationModalProps> = ({
             </label>
             <textarea
               required
-              value={formData.content}
-              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+              onChange={(e) => {
+                // Store content in variables or handle differently
+                setFormData({ 
+                  ...formData, 
+                  variables: { ...formData.variables, content: e.target.value }
+                });
+              }}
               rows={4}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
               placeholder="Enter notification message"
