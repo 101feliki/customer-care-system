@@ -7,7 +7,7 @@ html, body, #root, .App {
   height: 100vh !important;
   margin: 0 !important;
   padding: 0 !important;
-  overflow: hidden !important;
+  overflow: visible !important;
   transform: none !important;
   zoom: 1 !important;
   position: fixed !important;
@@ -143,6 +143,12 @@ body {
   overflow-y: auto !important;
   width: 100% !important;
 }
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 
 /* Mobile responsiveness */
 @media (max-width: 1024px) {
@@ -177,4 +183,106 @@ body {
   flex: 1 !important;
   min-height: 0 !important;
   min-width: 0 !important;
+}
+/* NOTIFICATION CARD FIXES - Add these to your CSS */
+
+/* Fix for notification card content overflow */
+.notification-card-container {
+  max-width: 100%;
+  overflow: hidden !important;
+}
+
+/* For grid view cards */
+.grid-notification-card {
+  max-width: 100% !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+}
+
+.grid-notification-card h3 {
+  font-size: 0.875rem !important; /* text-sm */
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+}
+
+.grid-notification-card p {
+  font-size: 0.75rem !important; /* text-xs */
+  display: -webkit-box !important;
+  -webkit-line-clamp: 3 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-height: 4.5rem !important; /* 3 lines * 1.5 line-height */
+  line-height: 1.5 !important;
+  margin: 0 !important;
+}
+
+/* For list view cards (EnhancedNotificationCard) */
+.list-notification-card {
+  max-width: 100% !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}
+
+.list-notification-card .content-wrapper {
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+.list-notification-card .truncated-content {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+  display: block !important;
+}
+
+.list-notification-card .expanded-content {
+  max-width: 100% !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+}
+
+/* Force all text to wrap properly */
+.notification-content-fix {
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  max-width: 100% !important;
+  display: inline-block !important;
+}
+
+/* Ensure cards don't expand beyond container */
+.grid-container {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+  gap: 1rem !important;
+}
+
+/* Media query for smaller screens */
+@media (max-width: 768px) {
+  .grid-container {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .grid-notification-card p {
+    -webkit-line-clamp: 2 !important;
+    max-height: 3rem !important;
+  }
+}
+/* Add this to your existing CSS */
+.break-words {
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+}
+
+.line-clamp-3 {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 3 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
 }

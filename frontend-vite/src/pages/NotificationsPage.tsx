@@ -108,11 +108,12 @@ const NotificationsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-primary flex">
+    <div className="h-screen flex overflow-hidden bg-primary">
       <Sidebar />
       
-      <div className="flex-1 min-h-screen overflow-x-hidden">
-        <header className="bg-secondary border-b border-color sticky top-0 z-30">
+      {/* FIXED SCROLLING: Changed structure for proper scrolling */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <header className="bg-secondary border-b border-color sticky top-0 z-30 shrink-0">
           <div className="px-6 py-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
@@ -134,7 +135,8 @@ const NotificationsPage: React.FC = () => {
           <FilterBar filters={filters} setFilters={setFilters} />
         </header>
 
-        <main className="p-6">
+        {/* FIXED SCROLLING: This main area now scrolls */}
+        <main className="flex-1 overflow-y-auto min-h-0 p-6">
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="bg-card rounded-xl shadow-sm p-4 border border-color">
@@ -143,7 +145,7 @@ const NotificationsPage: React.FC = () => {
             </div>
             <div className="bg-card rounded-xl shadow-sm p-4 border border-color">
               <div className="text-sm text-secondary">Unread</div>
-              <div className="text-2xl font-bold text-blue-600">{stats.unread}</div>
+              <div className="text-2xl font-bold text-blue-800">{stats.unread}</div>
             </div>
             <div className="bg-card rounded-xl shadow-sm p-4 border border-color">
               <div className="text-sm text-secondary">Starred</div>
@@ -181,37 +183,50 @@ const NotificationsPage: React.FC = () => {
                 <p className="text-secondary">Try adjusting your filters or create a new notification</p>
               </div>
             ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredNotifications.map((notification) => (
-                  <div key={notification.id} className="bg-card rounded-lg border border-color p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className={`p-2 rounded-lg ${
-                        notification.category === 'email' ? 'bg-blue-50 dark:bg-blue-900/20' :
-                        notification.category === 'sms' ? 'bg-green-50 dark:bg-green-900/20' :
-                        notification.category === 'urgent' ? 'bg-red-50 dark:bg-red-900/20' :
-                        'bg-gray-50 dark:bg-gray-800'
-                      }`}>
-                        {notification.category === 'email' && '📧'}
-                        {notification.category === 'sms' && '💬'}
-                        {notification.category === 'urgent' && '⚠️'}
-                        {notification.category === 'info' && 'ℹ️'}
-                      </div>
-                      <button
-                        onClick={() => starNotification(notification.id)}
-                        className="text-gray-400 hover:text-yellow-500"
-                      >
-                        {starredNotifications.has(notification.id) ? '★' : '☆'}
-                      </button>
-                    </div>
-                    <h3 className="font-medium text-primary mb-2">{notification.category.toUpperCase()}</h3>
-                    <p className="text-sm text-secondary mb-3 truncate">{notification.content}</p>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      To: {notification.recipientId}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {filteredNotifications.map((notification) => (
+      <div 
+        key={notification.id} 
+        className="bg-card rounded-lg border border-color p-4 flex flex-col min-h-[180px] break-words"
+      >
+        <div className="flex items-start justify-between mb-3">
+          <div className={`p-2 rounded-lg ${
+            notification.category === 'email' ? 'bg-blue-50 dark:bg-blue-900/20' :
+            notification.category === 'sms' ? 'bg-green-50 dark:bg-green-900/20' :
+            notification.category === 'urgent' ? 'bg-red-50 dark:bg-red-900/20' :
+            'bg-gray-50 dark:bg-gray-800'
+          }`}>
+            {notification.category === 'email' && '📧'}
+            {notification.category === 'sms' && '💬'}
+            {notification.category === 'urgent' && '⚠️'}
+            {notification.category === 'info' && 'ℹ️'}
+          </div>
+          <button
+            onClick={() => starNotification(notification.id)}
+            className="text-gray-400 hover:text-yellow-500 flex-shrink-0"
+          >
+            {starredNotifications.has(notification.id) ? '★' : '☆'}
+          </button>
+        </div>
+        
+        <h3 className="font-medium text-primary mb-2 truncate">
+          {notification.category.toUpperCase()}
+        </h3>
+        
+        {/* FIXED CONTENT AREA */}
+        <div className="flex-1 overflow-hidden mb-3">
+          <p className="text-sm text-secondary line-clamp-3 break-words">
+            {notification.content}
+          </p>
+        </div>
+        
+        <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+          To: {notification.recipientId}
+        </div>
+      </div>
+    ))}
+  </div>
+) : (
               <div className="space-y-4">
                 {filteredNotifications.map((notification) => (
                   <EnhancedNotificationCard
