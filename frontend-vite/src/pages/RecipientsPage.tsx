@@ -5,7 +5,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   UserIcon, 
-  EnvelopeIcon, 
+  
   PhoneIcon, 
   PlusIcon, 
   PencilIcon, 
@@ -14,7 +14,7 @@ import {
   XCircleIcon,
   EyeIcon,
   XMarkIcon,
-  PlayIcon,
+
   DocumentArrowUpIcon // Changed to a better upload icon
 } from '@heroicons/react/24/outline';
 
@@ -74,7 +74,7 @@ const RecipientsPage: React.FC = () => {
       });
       
       if (!response.ok) {
-        const errorText = await response.text();
+        
         
         if (response.status === 401) {
           setMessage({ 
@@ -763,7 +763,7 @@ const RecipientsPage: React.FC = () => {
                 <button
                   onClick={handleUploadCSV}
                   disabled={!csvData.trim() || uploading}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center min-w-[120px] justify-center"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center min-w-30 justify-center"
                 >
                   {uploading ? (
                     <>

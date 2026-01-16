@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar'; // Added Sidebar import
 import ThemeSwitcher from '../components/ThemeSwitcher';
-import { useTheme } from '../contexts/ThemeContext';
+
 import { useAuth } from '../contexts/AuthContext';
 import { 
-  CogIcon, BellIcon, UserIcon, CheckCircleIcon, 
-  PaintBrushIcon, ShieldCheckIcon, ChevronRightIcon 
+   BellIcon, UserIcon, CheckCircleIcon, 
+   ShieldCheckIcon, ChevronRightIcon 
 } from '@heroicons/react/24/outline';
 
 const SettingsPage: React.FC = () => {
@@ -150,7 +150,7 @@ const SettingsPage: React.FC = () => {
               {activeTab === 'profile' && (
                 <section className="bg-card border border-color rounded-2xl p-8 shadow-sm animate-in fade-in duration-500">
                   <div className="flex items-center space-x-6 mb-8">
-                    <div className="h-15 w-15 rounded-2xl bg-gradient-to-tr from-blue-800 to-blue-800 flex items-center justify-center text-3xl font-bold text-white shadow-xl ">
+                    <div className="h-15 w-15 rounded-2xl bg-linear-to-tr from-blue-800 to-blue-800 flex items-center justify-center text-3xl font-bold text-white shadow-xl ">
                       {user?.name?.charAt(0) || 'A'}
                     </div>
                     <div>

@@ -9,9 +9,9 @@ interface BulkImportModalProps {
   token: string;
 }
 
-const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClose, onImport, token }) => {
+const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClose,  token }) => {
   const [file, setFile] = useState<File | null>(null);
-  const [progress, setProgress] = useState(0);
+  
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
   const [previewData, setPreviewData] = useState<any[]>([]);
