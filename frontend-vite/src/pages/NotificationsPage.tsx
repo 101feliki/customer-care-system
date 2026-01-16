@@ -183,14 +183,14 @@ const NotificationsPage: React.FC = () => {
                 <p className="text-secondary">Try adjusting your filters or create a new notification</p>
               </div>
             ) : viewMode === 'grid' ? (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 grid-container-fix">
     {filteredNotifications.map((notification) => (
       <div 
         key={notification.id} 
-        className="bg-card rounded-lg border border-color p-4 flex flex-col min-h-[180px] break-words"
+        className="grid-notification-card bg-card rounded-lg border border-color p-4 break-words"
       >
         <div className="flex items-start justify-between mb-3">
-          <div className={`p-2 rounded-lg ${
+          <div className={`p-2 rounded-lg flex-shrink-0 ${
             notification.category === 'email' ? 'bg-blue-50 dark:bg-blue-900/20' :
             notification.category === 'sms' ? 'bg-green-50 dark:bg-green-900/20' :
             notification.category === 'urgent' ? 'bg-red-50 dark:bg-red-900/20' :
@@ -203,24 +203,21 @@ const NotificationsPage: React.FC = () => {
           </div>
           <button
             onClick={() => starNotification(notification.id)}
-            className="text-gray-400 hover:text-yellow-500 flex-shrink-0"
+            className="text-gray-400 hover:text-yellow-500 flex-shrink-0 ml-2"
           >
             {starredNotifications.has(notification.id) ? '★' : '☆'}
           </button>
         </div>
         
-        <h3 className="font-medium text-primary mb-2 truncate">
+        <h3 className="font-medium text-primary mb-2 truncate break-words">
           {notification.category.toUpperCase()}
         </h3>
         
-        {/* FIXED CONTENT AREA */}
-        <div className="flex-1 overflow-hidden mb-3">
-          <p className="text-sm text-secondary line-clamp-3 break-words">
-            {notification.content}
-          </p>
-        </div>
+        <p className="text-sm text-secondary line-clamp-3 break-words">
+          {notification.content}
+        </p>
         
-        <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+        <div className="text-xs text-gray-500 dark:text-gray-400 mt-3 truncate break-words">
           To: {notification.recipientId}
         </div>
       </div>
