@@ -128,7 +128,7 @@ const EnhancedNotificationCard: React.FC<NotificationCardProps> = ({
               </div>
             </div>
 
-            <p className="text-gray-800 font-medium truncate wrapbreak-words max-w-full">{notification.content}</p>
+            <p className="text-gray-800 font-medium truncate wrapwrapbreak-words max-w-full">{notification.content}</p>
 
             {isExpanded && (
               <div className="mt-2 space-y-2 text-sm text-gray-600">

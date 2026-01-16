@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import ThemeSwitcher from '../components/ThemeSwitcher';
-import { useTheme } from '../contexts/ThemeContext';
+
 import { useAuth } from '../contexts/AuthContext';
 import { 
   DocumentTextIcon, 
@@ -42,7 +42,7 @@ interface Recipient {
 }
 
 const TemplatesPage: React.FC = () => {
-  const { theme } = useTheme();
+  
   const { token } = useAuth(); 
   
   // --- Real Data State ---

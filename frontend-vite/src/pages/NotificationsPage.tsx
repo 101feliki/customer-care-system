@@ -3,11 +3,11 @@ import Sidebar from '../components/Sidebar';
 import EnhancedNotificationCard from '../components/EnhancedNotificationCard';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import FilterBar from '../components/FilterBar';
-import { useTheme } from '../contexts/ThemeContext';
+
 import notificationService, { Notification } from '../services/notificationService';
 
 const NotificationsPage: React.FC = () => {
-  const { theme } = useTheme();
+  
   // Ensure we initialize with an empty array
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,7 +18,7 @@ const NotificationsPage: React.FC = () => {
     dateRange: 'today',
     search: '',
   });
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [viewMode, ] = useState<'grid' | 'list'>('list');
 
   useEffect(() => {
     const loadNotifications = async () => {
@@ -187,10 +187,10 @@ const NotificationsPage: React.FC = () => {
     {filteredNotifications.map((notification) => (
       <div 
         key={notification.id} 
-        className="grid-notification-card bg-card rounded-lg border border-color p-4 break-words"
+        className="grid-notification-card bg-card rounded-lg border border-color p-4 wrap-break-words"
       >
         <div className="flex items-start justify-between mb-3">
-          <div className={`p-2 rounded-lg flex-shrink-0 ${
+          <div className={`p-2 rounded-lg shrink-0 ${
             notification.category === 'email' ? 'bg-blue-50 dark:bg-blue-900/20' :
             notification.category === 'sms' ? 'bg-green-50 dark:bg-green-900/20' :
             notification.category === 'urgent' ? 'bg-red-50 dark:bg-red-900/20' :
@@ -203,21 +203,21 @@ const NotificationsPage: React.FC = () => {
           </div>
           <button
             onClick={() => starNotification(notification.id)}
-            className="text-gray-400 hover:text-yellow-500 flex-shrink-0 ml-2"
+            className="text-gray-400 hover:text-yellow-500 shrink-0 ml-2"
           >
             {starredNotifications.has(notification.id) ? '★' : '☆'}
           </button>
         </div>
         
-        <h3 className="font-medium text-primary mb-2 truncate break-words">
+        <h3 className="font-medium text-primary mb-2 truncate wrapbreak-words">
           {notification.category.toUpperCase()}
         </h3>
         
-        <p className="text-sm text-secondary line-clamp-3 break-words">
+        <p className="text-sm text-secondary line-clamp-3 wrapbreak-words">
           {notification.content}
         </p>
         
-        <div className="text-xs text-gray-500 dark:text-gray-400 mt-3 truncate break-words">
+        <div className="text-xs text-gray-500 dark:text-gray-400 mt-3 truncate wrapbreak-words">
           To: {notification.recipientId}
         </div>
       </div>
