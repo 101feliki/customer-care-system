@@ -1005,7 +1005,7 @@ const RecipientsPage: React.FC = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && selectedRecipient && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg max-w-md w-full p-6">
+          <div className="bg-white dark:bg-gray-600 rounded-xl shadow-lg max-w-md w-full p-6">
             <div className="flex flex-col items-center">
               <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center mb-4">
                 <TrashIcon className="h-6 w-6 text-red-600 dark:text-red-400" />
