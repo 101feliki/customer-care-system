@@ -670,7 +670,7 @@ const TemplatesPage: React.FC = () => {
                       CONTENT {formData.type !== 'EMAIL' && '*'}
                     </label>
                     <textarea 
-                      className="w-full h-64 bg-gray-50 dark:bg-gray-900 border border-color rounded-lg p-4 font-mono text-sm text-primary focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                      className="w-full h-64 bg-gray-50 dark:bg-gray-600 border border-color rounded-lg p-4 font-mono text-sm text-primary focus:ring-2 focus:ring-blue-500 outline-none resize-none"
                       value={formData.type === 'EMAIL' ? formData.htmlBody : formData.content}
                       onChange={e => {
                         if (formData.type === 'EMAIL') {
@@ -687,7 +687,7 @@ const TemplatesPage: React.FC = () => {
                     <div>
                       <label className="block text-xs font-semibold text-secondary mb-1">TEXT VERSION (Optional)</label>
                       <textarea 
-                        className="w-full h-32 bg-gray-50 dark:bg-gray-900 border border-color rounded-lg p-4 font-mono text-sm text-primary focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                        className="w-full h-32 bg-gray-50 dark:bg-gray-700 border border-color rounded-lg p-4 font-mono text-sm text-primary focus:ring-2 focus:ring-blue-500 outline-none resize-none"
                         value={formData.textBody}
                         onChange={e => setFormData({...formData, textBody: e.target.value})}
                         placeholder="Plain text version for email clients..."
@@ -704,8 +704,8 @@ const TemplatesPage: React.FC = () => {
                   <EyeIcon className="h-4 w-4 text-secondary" />
                 </div>
                 
-                <div className="flex-1 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-color overflow-hidden flex flex-col">
-                  <div className="bg-gray-100 dark:bg-gray-900 px-4 py-3 border-b border-color flex space-x-2">
+                <div className="flex-1 bg-white dark:bg-gray-600 rounded-2xl shadow-xl border border-color overflow-hidden flex flex-col">
+                  <div className="bg-gray-100 dark:bg-gray-500 px-4 py-3 border-b border-color flex space-x-2">
                     <div className="w-2 h-2 rounded-full bg-red-400"></div>
                     <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
                     <div className="w-2 h-2 rounded-full bg-green-400"></div>
