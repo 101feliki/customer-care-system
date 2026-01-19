@@ -52,7 +52,7 @@ export class SendNotificationWithChannel {
         recipientEmail,
         subject || 'Notification',
         content,
-        content, // Plain text version
+         // Plain text version
       );
     } else if (channel === 'sms' && recipientPhone) {
       deliveryResult = await this.smsService.sendSMS(recipientPhone, content);
