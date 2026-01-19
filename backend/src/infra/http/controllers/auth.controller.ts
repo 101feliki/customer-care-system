@@ -36,7 +36,19 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto.email, loginDto.password);
+    const result = await this.authService.login(
+      loginDto.email, 
+      loginDto.password
+    );
+    
+    // Log successful login (without password)
+    console.log(`✅ User logged in: ${loginDto.email}`);
+    
+    return {
+      ...result,
+      expiresIn: '7 days', // Inform frontend of token duration
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @Post('forgot-password')
@@ -56,11 +68,10 @@ export class AuthController {
 
   @Post('refresh-token')
   @HttpCode(HttpStatus.OK)
-  async refreshToken(@Body('refreshToken') refreshToken: string) {
-    return this.authService.refreshToken(refreshToken);
+  async refreshToken(@Body() body: { refreshToken: string }) {
+    return this.authService.refreshToken(body.refreshToken);
   }
   
-
   @Get('verify-email/:token')
   async verifyEmail(@Param('token') token: string) {
     return this.authService.verifyEmail(token);
@@ -71,6 +82,21 @@ export class AuthController {
   async getProfile(@Request() req) {
     return {
       user: req.user,
+      valid: true,
+      expiresIn: '7 days',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('check-token')
+  async checkToken(@Request() req) {
+    return {
+      valid: true,
+      message: 'Token is valid',
+      user: req.user,
+      expiresIn: '7 days',
+      timestamp: new Date().toISOString(),
     };
   }
 
@@ -78,9 +104,24 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout() {
-    // In a real app, you might blacklist the token
     return {
       message: 'Logged out successfully',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // Add a test endpoint to check if auth is working
+  @Get('status')
+  async getStatus() {
+    return {
+      status: 'Auth service is running',
+      timestamp: new Date().toISOString(),
+      endpoints: [
+        { method: 'POST', path: '/auth/login', description: 'User login' },
+        { method: 'POST', path: '/auth/register', description: 'User registration' },
+        { method: 'GET', path: '/auth/check-token', description: 'Check token validity', auth: true },
+        { method: 'GET', path: '/auth/profile', description: 'Get user profile', auth: true },
+      ]
     };
   }
 }
