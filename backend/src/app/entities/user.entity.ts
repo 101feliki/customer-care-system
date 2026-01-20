@@ -36,6 +36,13 @@ export class User {
   @UpdateDateColumn()
   updatedAt: Date;
 
+  // Add constructor to accept properties
+  constructor(props?: Partial<User>) {
+    if (props) {
+      Object.assign(this, props);
+    }
+  }
+
   async hashPassword(): Promise<void> {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);

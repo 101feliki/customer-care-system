@@ -19,7 +19,7 @@ async function main() {
         email: 'admin@birdview.com',
         password: hashedPassword,
         name: 'Admin User',
-        role: 'admin',
+        role: 'ADMIN',
         isVerified: true,
       },
     });
