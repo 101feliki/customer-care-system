@@ -86,7 +86,7 @@ const EnhancedNotificationCard: React.FC<NotificationCardProps> = ({
       className={`rounded-lg shadow-sm border p-4 mb-3 transition-all duration-200 ${config.bgColor} ${config.borderColor} border hover:shadow-md ${notification.readAt ? 'opacity-75' : ''}`}
     >
       <div className="flex items-start justify-between">
-        <div className="flex items-start space-x-3 flex-1">
+        <div className="flex items-start space-x-3 flex-1 min-w-0">
           <div className={`p-2 rounded-lg ${config.bgColor}`}>
             <config.icon className={`h-5 w-5 ${config.color}`} />
           </div>
@@ -128,7 +128,10 @@ const EnhancedNotificationCard: React.FC<NotificationCardProps> = ({
               </div>
             </div>
 
-            <p className="text-gray-800 font-medium truncate wrapwrapbreak-words max-w-full">{notification.content}</p>
+            <p className="text-gray-800 font-medium break-all line-clamp-2 max-w-full">
+  {notification.content}
+</p>
+
 
             {isExpanded && (
               <div className="mt-2 space-y-2 text-sm text-gray-600">

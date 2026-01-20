@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import ThemeSwitcher from '../components/ThemeSwitcher';
-
 import { useAuth } from '../contexts/AuthContext';
 import { 
   DocumentTextIcon, 
@@ -14,7 +13,13 @@ import {
   BellIcon,
   XMarkIcon,
   EyeIcon,
-  PaperAirplaneIcon
+  PaperAirplaneIcon,
+  UserIcon,
+  PhoneIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ArrowPathIcon,
+  UsersIcon
 } from '@heroicons/react/24/outline';
 
 // --- Types matching your NestJS Backend ---
@@ -31,14 +36,13 @@ interface Template {
   updatedAt?: string;
 }
 
-
-
 interface Recipient {
   id: string;
   name: string;
   email: string;
   phone?: string;
   status?: string;
+  createdAt?: string;
 }
 
 const TemplatesPage: React.FC = () => {
@@ -75,6 +79,16 @@ const TemplatesPage: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState('');
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
+
+  // --- Recipients Section State ---
+  const [showRecipientsSection, setShowRecipientsSection] = useState(false);
+  const [recipientsLoading, setRecipientsLoading] = useState(false);
+  const [recipientStats, setRecipientStats] = useState({
+    total: 0,
+    active: 0,
+    inactive: 0,
+    blocked: 0
+  });
 
   // 1. FETCH TEMPLATES FROM BACKEND
   const fetchTemplates = async () => {
@@ -156,7 +170,7 @@ const TemplatesPage: React.FC = () => {
     }
   };
 
-  // 2. FETCH RECIPIENTS FOR SENDING
+  // 2. FETCH RECIPIENTS FOR SENDING AND DISPLAY
   const fetchRecipients = async () => {
     if (!token) {
       console.log('❌ No token for fetching recipients');
@@ -164,6 +178,7 @@ const TemplatesPage: React.FC = () => {
     }
     
     try {
+      setRecipientsLoading(true);
       console.log('🔍 Fetching recipients...');
       
       const response = await fetch('http://localhost:3001/recipients', {
@@ -196,22 +211,38 @@ const TemplatesPage: React.FC = () => {
       }
       
       console.log(`✅ Found ${recipientsArray.length} recipients`);
-      setRecipients(recipientsArray.map(recipient => ({
+      const mappedRecipients: Recipient[] = recipientsArray.map(recipient => ({
         id: recipient.id || '',
         name: recipient.name || 'Unknown',
         email: recipient.email || '',
         phone: recipient.phone || '',
-        status: recipient.status || 'active'
-      })));
+        status: recipient.status || 'active',
+        createdAt: recipient.createdAt
+      }));
+      
+      setRecipients(mappedRecipients);
+      
+      // Calculate stats
+      const stats = {
+        total: mappedRecipients.length,
+        active: mappedRecipients.filter(r => r.status === 'active').length,
+        inactive: mappedRecipients.filter(r => r.status === 'inactive').length,
+        blocked: mappedRecipients.filter(r => r.status === 'blocked').length,
+      };
+      setRecipientStats(stats);
       
     } catch (err) {
       console.error('❌ Error fetching recipients:', err);
+    } finally {
+      setRecipientsLoading(false);
     }
   };
 
   useEffect(() => {
     if (token) {
       fetchTemplates();
+      // Optionally fetch recipients on mount
+      // fetchRecipients();
     }
   }, [token]);
 
@@ -283,10 +314,10 @@ const TemplatesPage: React.FC = () => {
 
       setShowModal(false);
       fetchTemplates(); 
-      alert(isEditMode ? 'Template Updated!' : 'Template Created!');
+      alert(isEditMode ? '✅ Template Updated!' : '✅ Template Created!');
     } catch (err) {
       console.error('Error saving template:', err);
-      alert(`Error saving template: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      alert(`❌ Error saving template: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
@@ -310,14 +341,14 @@ const TemplatesPage: React.FC = () => {
       
       if (response.ok) {
         setTemplates(prev => prev.filter(t => t.id !== id));
-        alert('Template deleted successfully');
+        alert('✅ Template deleted successfully');
       } else {
         const errorText = await response.text();
         throw new Error(`Failed to delete: ${errorText}`);
       }
     } catch (err) {
       console.error('Delete error:', err);
-      alert('Failed to delete template');
+      alert('❌ Failed to delete template');
     }
   };
 
@@ -476,6 +507,15 @@ const TemplatesPage: React.FC = () => {
     return template.content?.substring(0, 100) || 'No content';
   };
 
+  const getRecipientStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'text-green-600 bg-green-50 dark:bg-green-900/20';
+      case 'inactive': return 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20';
+      case 'blocked': return 'text-red-600 bg-red-50 dark:bg-red-900/20';
+      default: return 'text-gray-600 bg-gray-50 dark:bg-gray-800';
+    }
+  };
+
   const filteredTemplates = templates.filter(t => 
     t.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -505,6 +545,7 @@ const TemplatesPage: React.FC = () => {
         </header>
 
         <main className="flex-1 overflow-y-auto p-6">
+          {/* Search Bar */}
           <div className="mb-6 relative max-w-md">
             <input
               type="text"
@@ -516,6 +557,189 @@ const TemplatesPage: React.FC = () => {
             <DocumentTextIcon className="absolute left-3 top-3.5 h-5 w-5 text-secondary" />
           </div>
 
+          {/* Recipients Section */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <UsersIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-primary">Uploaded Recipients</h2>
+                  <p className="text-secondary text-sm">Manage recipients for sending notifications</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => {
+                    if (!showRecipientsSection) {
+                      fetchRecipients();
+                    }
+                    setShowRecipientsSection(!showRecipientsSection);
+                  }}
+                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-primary rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center"
+                >
+                  {showRecipientsSection ? 'Hide Recipients' : 'Show Recipients'}
+                </button>
+                <button
+                  onClick={fetchRecipients}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                  disabled={recipientsLoading}
+                >
+                  {recipientsLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Refreshing...
+                    </>
+                  ) : (
+                    <>
+                      <ArrowPathIcon className="h-4 w-4 mr-2" />
+                      Refresh
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {showRecipientsSection && (
+              <>
+                {/* Recipient Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+                  <div className="bg-card rounded-xl p-4 border border-color hover:shadow-md transition-shadow">
+                    <div className="text-sm text-secondary">Total Recipients</div>
+                    <div className="text-2xl font-bold text-primary">{recipientStats.total}</div>
+                    <div className="text-xs text-secondary mt-1">Uploaded via CSV</div>
+                  </div>
+                  <div className="bg-card rounded-xl p-4 border border-color hover:shadow-md transition-shadow">
+                    <div className="text-sm text-secondary">Active</div>
+                    <div className="text-2xl font-bold text-green-600">{recipientStats.active}</div>
+                    <div className="text-xs text-secondary mt-1">Ready to receive</div>
+                  </div>
+                  <div className="bg-card rounded-xl p-4 border border-color hover:shadow-md transition-shadow">
+                    <div className="text-sm text-secondary">Inactive</div>
+                    <div className="text-2xl font-bold text-yellow-600">{recipientStats.inactive}</div>
+                    <div className="text-xs text-secondary mt-1">Temporarily disabled</div>
+                  </div>
+                  <div className="bg-card rounded-xl p-4 border border-color hover:shadow-md transition-shadow">
+                    <div className="text-sm text-secondary">Blocked</div>
+                    <div className="text-2xl font-bold text-red-600">{recipientStats.blocked}</div>
+                    <div className="text-xs text-secondary mt-1">Not receiving</div>
+                  </div>
+                </div>
+
+                {/* Recipients List */}
+                <div className="bg-card rounded-xl border border-color overflow-hidden mb-6">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-color">
+                      <thead className="bg-gray-50 dark:bg-gray-800">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Name</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Email</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Phone</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Status</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-color">
+                        {recipientsLoading ? (
+                          <tr>
+                            <td colSpan={5} className="px-6 py-8 text-center">
+                              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                              <p className="mt-2 text-secondary">Loading recipients...</p>
+                            </td>
+                          </tr>
+                        ) : recipients.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="px-6 py-8 text-center">
+                              <div className="text-gray-400 text-3xl mb-2">👤</div>
+                              <p className="text-secondary">No recipients found. Upload a CSV or add recipients manually.</p>
+                              <div className="mt-3">
+                                <a 
+                                  href="/recipients" 
+                                  className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                >
+                                  Go to Recipients Page
+                                </a>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : (
+                          recipients.slice(0, 5).map((recipient) => (
+                            <tr key={recipient.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                              <td className="px-6 py-4">
+                                <div className="flex items-center">
+                                  <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                                    <UserIcon className="h-4 w-4 text-blue-600 dark:text-blue-300" />
+                                  </div>
+                                  <div className="ml-3">
+                                    <div className="text-sm font-medium text-primary">{recipient.name}</div>
+                                    <div className="text-xs text-secondary">ID: {recipient.id?.substring(0, 8)}...</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-sm text-primary">{recipient.email}</td>
+                              <td className="px-6 py-4 text-sm text-secondary">
+                                {recipient.phone ? (
+                                  <div className="flex items-center">
+                                    <PhoneIcon className="h-3 w-3 mr-1" />
+                                    {recipient.phone}
+                                  </div>
+                                ) : (
+                                  'No phone'
+                                )}
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getRecipientStatusColor(recipient.status || 'active')}`}>
+                                  {(recipient.status || 'active').charAt(0).toUpperCase() + (recipient.status || 'active').slice(1)}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4">
+                                <button
+                                  onClick={() => {
+                                    // Add recipient to selected recipients for sending
+                                    if (selectedTemplateForSend) {
+                                      setSelectedRecipients(prev => 
+                                        prev.includes(recipient.id) 
+                                          ? prev.filter(id => id !== recipient.id)
+                                          : [...prev, recipient.id]
+                                      );
+                                    }
+                                  }}
+                                  className={`px-3 py-1 text-xs rounded-lg transition-colors ${
+                                    selectedRecipients.includes(recipient.id)
+                                      ? 'bg-blue-600 text-white'
+                                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                  }`}
+                                >
+                                  {selectedRecipients.includes(recipient.id) ? 'Selected ✓' : 'Select'}
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {recipients.length > 5 && (
+                    <div className="px-6 py-4 border-t border-color bg-gray-50 dark:bg-gray-800/50 text-center">
+                      <p className="text-sm text-secondary">
+                        Showing 5 of {recipients.length} recipients. 
+                        <a
+                          href="/recipients"
+                          className="ml-2 text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          View all recipients →
+                        </a>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Templates Section */}
           {isLoading ? (
             <div className="flex justify-center py-20">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -830,7 +1054,7 @@ const TemplatesPage: React.FC = () => {
                   )}
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                  Selected: {selectedRecipients.length} recipient(s)
+                  Selected: <span className="font-bold text-blue-600 dark:text-blue-400">{selectedRecipients.length}</span> recipient(s)
                 </p>
               </div>
 
