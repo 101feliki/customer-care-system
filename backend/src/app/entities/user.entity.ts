@@ -1,42 +1,19 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+// src/app/entities/user.entity.ts
 import * as bcrypt from 'bcrypt';
 
-@Entity('users')
 export class User {
-  @PrimaryGeneratedColumn('uuid')
   id: string;
-
-  @Column({ unique: true })
   email: string;
-
-  @Column()
   password: string;
-
-  @Column()
   name: string;
-
-  @Column({ default: 'user' })
-  role: 'user' | 'admin' | 'superadmin';
-
-  @Column({ default: false })
-  isVerified: boolean;
-
-  @Column({ nullable: true })
+  role: 'user' | 'admin' | 'superadmin' = 'user';
+  isVerified: boolean = false;
   verificationToken?: string;
-
-  @Column({ nullable: true })
   resetPasswordToken?: string;
-
-  @Column({ nullable: true })
   resetPasswordExpires?: Date;
+  createdAt: Date = new Date();
+  updatedAt: Date = new Date();
 
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
-
-  // Add constructor to accept properties
   constructor(props?: Partial<User>) {
     if (props) {
       Object.assign(this, props);

@@ -1,11 +1,12 @@
 /* eslint-disable prettier/prettier */
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { NotificationsRepository } from '@app/repositories/notifications-repository';
 import { UsersRepository } from '@app/repositories/users-repository'; // Add this
 import { PrismaService } from './prisma/prisma.service';
 import { PrismaNotificationsRepository } from './prisma/repositories/prisma-notifications-repository';
 import { PrismaUsersRepository } from './prisma/repositories/prisma-users-repository'; // Add this
 
+@Global()
 @Module({
   providers: [
     PrismaService,
