@@ -703,7 +703,7 @@ const RecipientsPage: React.FC = () => {
                   onChange={(e) => setCsvData(e.target.value)}
                   placeholder="Paste CSV data with columns: name,email,phone,status (optional)
      Example:
-    John Doe,john@example.com,+1234567890,active
+    xxxx,xxxx@example.com,+1234567890,active
    Jane Smith,jane@example.com,,active
    Bob Johnson,bob@example.com,+442071234567,inactive"
                   rows={10}

@@ -16,9 +16,13 @@ import {
   PaperAirplaneIcon,
   UserIcon,
   PhoneIcon,
-  CheckCircleIcon,
+  GlobeAltIcon,
   XCircleIcon,
   ArrowPathIcon,
+  SparklesIcon,
+  LightBulbIcon,
+  ExclamationCircleIcon,
+  CheckCircleIcon,
   UsersIcon
 } from '@heroicons/react/24/outline';
 
@@ -70,6 +74,7 @@ const TemplatesPage: React.FC = () => {
     htmlBody: '',
     textBody: '',
     variables: ['name', 'email', 'company', 'date'] as string[],
+    customVariables: [] as string[], 
   });
 
   // --- Send Modal State ---
@@ -241,8 +246,6 @@ const TemplatesPage: React.FC = () => {
   useEffect(() => {
     if (token) {
       fetchTemplates();
-      // Optionally fetch recipients on mount
-      // fetchRecipients();
     }
   }, [token]);
 
@@ -455,6 +458,21 @@ const TemplatesPage: React.FC = () => {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      id: '',
+      name: '',
+      type: 'EMAIL',
+      content: '',
+      subject: '',
+      htmlBody: '',
+      textBody: '',
+      variables: ['name', 'email', 'company', 'date'],
+      customVariables: [],
+    });
+    setIsEditMode(false);
+  };
+
   const openModal = (template?: Template) => {
     if (template) {
       setFormData({
@@ -466,32 +484,51 @@ const TemplatesPage: React.FC = () => {
         htmlBody: template.htmlBody || '',
         textBody: template.textBody || '',
         variables: template.variables || ['name', 'email', 'company', 'date'],
+        customVariables: [],
       });
       setIsEditMode(true);
     } else {
-      setFormData({ 
-        id: '', 
-        name: '', 
-        type: 'EMAIL',
-        content: '',
-        subject: '',
-        htmlBody: '',
-        textBody: '',
-        variables: ['name', 'email', 'company', 'date'],
-      });
-      setIsEditMode(false);
+      resetForm();
     }
     setShowModal(true);
   };
 
   const insertVariable = (varName: string) => {
     const variable = `{{${varName}}}`;
-    setFormData(prev => ({
-      ...prev,
-      content: prev.content + ` ${variable} `,
-      htmlBody: prev.htmlBody + ` ${variable} `,
-      textBody: prev.textBody + ` ${variable} `,
-    }));
+    const currentContent = formData.type === 'EMAIL' ? formData.htmlBody : formData.content;
+    
+    // Smart placement: Insert at cursor position if in textarea
+    const textarea = document.getElementById('template-content') as HTMLTextAreaElement;
+    if (textarea && document.activeElement === textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newContent = currentContent.substring(0, start) + variable + currentContent.substring(end);
+      
+      if (formData.type === 'EMAIL') {
+        setFormData(prev => ({ ...prev, htmlBody: newContent }));
+      } else {
+        setFormData(prev => ({ ...prev, content: newContent }));
+      }
+      
+      // Restore cursor position
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + variable.length, start + variable.length);
+      }, 0);
+    } else {
+      // Append at end
+      if (formData.type === 'EMAIL') {
+        setFormData(prev => ({
+          ...prev,
+          htmlBody: prev.htmlBody + (prev.htmlBody ? ' ' : '') + variable
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          content: prev.content + (prev.content ? ' ' : '') + variable
+        }));
+      }
+    }
   };
 
   const getIcon = (type: string = 'EMAIL') => {
@@ -535,9 +572,9 @@ const TemplatesPage: React.FC = () => {
               <ThemeSwitcher />
               <button 
                 onClick={() => openModal()}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center shadow-lg transition-all"
+                className="px-4 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center shadow-lg transition-all"
               >
-                <PlusIcon className="h-5 w-5 mr-2" />
+                <PlusIcon className="h-5 w- mr-2" />
                 Create Template
               </button>
             </div>
@@ -555,188 +592,6 @@ const TemplatesPage: React.FC = () => {
               className="w-full pl-10 pr-4 py-3 rounded-xl border border-color bg-card text-primary outline-none focus:ring-2 focus:ring-blue-500"
             />
             <DocumentTextIcon className="absolute left-3 top-3.5 h-5 w-5 text-secondary" />
-          </div>
-
-          {/* Recipients Section */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                  <UsersIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-primary">Uploaded Recipients</h2>
-                  <p className="text-secondary text-sm">Manage recipients for sending notifications</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={() => {
-                    if (!showRecipientsSection) {
-                      fetchRecipients();
-                    }
-                    setShowRecipientsSection(!showRecipientsSection);
-                  }}
-                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-primary rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center"
-                >
-                  {showRecipientsSection ? 'Hide Recipients' : 'Show Recipients'}
-                </button>
-                <button
-                  onClick={fetchRecipients}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-                  disabled={recipientsLoading}
-                >
-                  {recipientsLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Refreshing...
-                    </>
-                  ) : (
-                    <>
-                      <ArrowPathIcon className="h-4 w-4 mr-2" />
-                      Refresh
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {showRecipientsSection && (
-              <>
-                {/* Recipient Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
-                  <div className="bg-card rounded-xl p-4 border border-color hover:shadow-md transition-shadow">
-                    <div className="text-sm text-secondary">Total Recipients</div>
-                    <div className="text-2xl font-bold text-primary">{recipientStats.total}</div>
-                    <div className="text-xs text-secondary mt-1">Uploaded via CSV</div>
-                  </div>
-                  <div className="bg-card rounded-xl p-4 border border-color hover:shadow-md transition-shadow">
-                    <div className="text-sm text-secondary">Active</div>
-                    <div className="text-2xl font-bold text-green-600">{recipientStats.active}</div>
-                    <div className="text-xs text-secondary mt-1">Ready to receive</div>
-                  </div>
-                  <div className="bg-card rounded-xl p-4 border border-color hover:shadow-md transition-shadow">
-                    <div className="text-sm text-secondary">Inactive</div>
-                    <div className="text-2xl font-bold text-yellow-600">{recipientStats.inactive}</div>
-                    <div className="text-xs text-secondary mt-1">Temporarily disabled</div>
-                  </div>
-                  <div className="bg-card rounded-xl p-4 border border-color hover:shadow-md transition-shadow">
-                    <div className="text-sm text-secondary">Blocked</div>
-                    <div className="text-2xl font-bold text-red-600">{recipientStats.blocked}</div>
-                    <div className="text-xs text-secondary mt-1">Not receiving</div>
-                  </div>
-                </div>
-
-                {/* Recipients List */}
-                <div className="bg-card rounded-xl border border-color overflow-hidden mb-6">
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-color">
-                      <thead className="bg-gray-50 dark:bg-gray-800">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Name</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Email</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Phone</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Status</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-secondary uppercase tracking-wider">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-color">
-                        {recipientsLoading ? (
-                          <tr>
-                            <td colSpan={5} className="px-6 py-8 text-center">
-                              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                              <p className="mt-2 text-secondary">Loading recipients...</p>
-                            </td>
-                          </tr>
-                        ) : recipients.length === 0 ? (
-                          <tr>
-                            <td colSpan={5} className="px-6 py-8 text-center">
-                              <div className="text-gray-400 text-3xl mb-2">👤</div>
-                              <p className="text-secondary">No recipients found. Upload a CSV or add recipients manually.</p>
-                              <div className="mt-3">
-                                <a 
-                                  href="/recipients" 
-                                  className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                                >
-                                  Go to Recipients Page
-                                </a>
-                              </div>
-                            </td>
-                          </tr>
-                        ) : (
-                          recipients.slice(0, 5).map((recipient) => (
-                            <tr key={recipient.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                              <td className="px-6 py-4">
-                                <div className="flex items-center">
-                                  <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                                    <UserIcon className="h-4 w-4 text-blue-600 dark:text-blue-300" />
-                                  </div>
-                                  <div className="ml-3">
-                                    <div className="text-sm font-medium text-primary">{recipient.name}</div>
-                                    <div className="text-xs text-secondary">ID: {recipient.id?.substring(0, 8)}...</div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-sm text-primary">{recipient.email}</td>
-                              <td className="px-6 py-4 text-sm text-secondary">
-                                {recipient.phone ? (
-                                  <div className="flex items-center">
-                                    <PhoneIcon className="h-3 w-3 mr-1" />
-                                    {recipient.phone}
-                                  </div>
-                                ) : (
-                                  'No phone'
-                                )}
-                              </td>
-                              <td className="px-6 py-4">
-                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getRecipientStatusColor(recipient.status || 'active')}`}>
-                                  {(recipient.status || 'active').charAt(0).toUpperCase() + (recipient.status || 'active').slice(1)}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4">
-                                <button
-                                  onClick={() => {
-                                    // Add recipient to selected recipients for sending
-                                    if (selectedTemplateForSend) {
-                                      setSelectedRecipients(prev => 
-                                        prev.includes(recipient.id) 
-                                          ? prev.filter(id => id !== recipient.id)
-                                          : [...prev, recipient.id]
-                                      );
-                                    }
-                                  }}
-                                  className={`px-3 py-1 text-xs rounded-lg transition-colors ${
-                                    selectedRecipients.includes(recipient.id)
-                                      ? 'bg-blue-600 text-white'
-                                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                                  }`}
-                                >
-                                  {selectedRecipients.includes(recipient.id) ? 'Selected ✓' : 'Select'}
-                                </button>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {recipients.length > 5 && (
-                    <div className="px-6 py-4 border-t border-color bg-gray-50 dark:bg-gray-800/50 text-center">
-                      <p className="text-sm text-secondary">
-                        Showing 5 of {recipients.length} recipients. 
-                        <a
-                          href="/recipients"
-                          className="ml-2 text-blue-600 dark:text-blue-400 hover:underline"
-                        >
-                          View all recipients →
-                        </a>
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
           </div>
 
           {/* Templates Section */}
@@ -795,7 +650,7 @@ const TemplatesPage: React.FC = () => {
                     <p className="text-secondary font-mono text-xs leading-relaxed">
                       {getTemplateContent(template)}
                     </p>
-                    <div className="absolute bottom-0 left-0 w-full h-8 bg-linear-to-t from-gray-50 dark:from-gray-900 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-gray-50 dark:from-gray-900 to-transparent"></div>
                   </div>
 
                   <div className="flex justify-between items-center text-xs text-secondary mt-2">
@@ -818,164 +673,436 @@ const TemplatesPage: React.FC = () => {
         </main>
       </div>
 
-      {/* --- CREATE/EDIT TEMPLATE MODAL --- */}
+      {/* --- ENHANCED CREATE/EDIT TEMPLATE MODAL --- */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-card w-full max-w-5xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 w-full max-w-6xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
             
-            <div className="px-6 py-4 border-b border-color flex justify-between items-center bg-blue-600 dark:bg-blue-800 text-white">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-blue-600 text-white">
               <div>
-                <h2 className="text-xl font-bold">
+                <h2 className="text-xl font-bold flex items-center">
+                  <SparklesIcon className="h-5 w-5 mr-2" />
                   {isEditMode ? 'Edit Template' : 'Create New Template'}
                 </h2>
+                <p className="text-sm opacity-90">Design and optimize your notification template</p>
               </div>
-              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-blue-700 rounded-full">
+              <button 
+                onClick={() => {
+                  setShowModal(false);
+                  resetForm();
+                }} 
+                className="p-2 hover:bg-blue-700 rounded-full transition-colors"
+              >
                 <XMarkIcon className="h-6 w-6" />
               </button>
             </div>
 
-            <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-              {/* Editor */}
-              <div className="flex-1 p-6 overflow-y-auto border-r border-color">
-                <div className="space-y-5">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-secondary mb-1">NAME *</label>
-                      <input 
-                        className="w-full bg-card border border-color rounded-lg px-4 py-2 text-primary focus:ring-2 focus:ring-blue-500 outline-none"
-                        value={formData.name}
-                        onChange={e => setFormData({...formData, name: e.target.value})}
-                        placeholder="Template Name"
-                      />
+            {/* Progress Steps */}
+            <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+              <div className="flex items-center justify-between">
+                {['Setup', 'Content', 'Preview'].map((step, index) => (
+                  <div key={step} className="flex items-center">
+                    <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                      index === 0 
+                        ? 'bg-blue-600 text-white'
+                        : formData.name 
+                          ? 'bg-green-100 dark:bg-blue-900/30 text-blue-600'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-400'
+                    }`}>
+                      {index === 0 ? index + 1 : <CheckCircleIcon className="h-5 w-5" />}
                     </div>
+                    <span className={`ml-2 text-sm font-medium ${
+                      index === 0 ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500'
+                    }`}>
+                      {step}
+                    </span>
+                    {index < 2 && (
+                      <div className={`h-0.5 w-12 mx-2 ${
+                        formData.name ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-700'
+                      }`} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+              {/* Main Editor */}
+              <div className="flex-1 p-6 overflow-y-auto">
+                <div className="space-y-6">
+                  {/* Template Name & Type */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-secondary mb-1">CHANNEL *</label>
-                      <select 
-                        className="w-full bg-card border border-color rounded-lg px-4 py-2 text-primary focus:ring-2 focus:ring-blue-500 outline-none"
-                        value={formData.type}
-                        onChange={e => setFormData({...formData, type: e.target.value as 'EMAIL' | 'SMS' | 'PUSH'})}
-                      >
-                        <option value="EMAIL">Email</option>
-                        <option value="SMS">SMS</option>
-                        <option value="PUSH">Push Notification</option>
-                      </select>
+                      <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        Template Name *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        placeholder="e.g., Welcome Email, Order Confirmation"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Choose a descriptive name that helps identify this template
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        Channel Type *
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setFormData({...formData, type: 'EMAIL'})}
+                          className={`p-3 border-2 rounded-lg flex flex-col items-center transition-all ${
+                            formData.type === 'EMAIL'
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                          }`}
+                        >
+                          <EnvelopeIcon className={`h-6 w-6 mb-1 ${
+                            formData.type === 'EMAIL' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'
+                          }`} />
+                          <span className="text-sm font-medium">Email</span>
+                        </button>
+                        
+                        <button
+                          type="button"
+                          onClick={() => setFormData({...formData, type: 'SMS'})}
+                          className={`p-3 border-2 rounded-lg flex flex-col items-center transition-all ${
+                            formData.type === 'SMS'
+                              ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                          }`}
+                        >
+                          <ChatBubbleBottomCenterTextIcon className={`h-6 w-6 mb-1 ${
+                            formData.type === 'SMS' ? 'text-green-600 dark:text-green-400' : 'text-gray-400'
+                          }`} />
+                          <span className="text-sm font-medium">SMS</span>
+                        </button>
+                        
+                        <button
+                          type="button"
+                          onClick={() => setFormData({...formData, type: 'PUSH'})}
+                          className={`p-3 border-2 rounded-lg flex flex-col items-center transition-all ${
+                            formData.type === 'PUSH'
+                              ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                          }`}
+                        >
+                          <BellIcon className={`h-6 w-6 mb-1 ${
+                            formData.type === 'PUSH' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400'
+                          }`} />
+                          <span className="text-sm font-medium">Push</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  {formData.type === 'EMAIL' && (
-                    <div>
-                      <label className="block text-xs font-semibold text-secondary mb-1">SUBJECT</label>
-                      <input 
-                        className="w-full bg-card border border-color rounded-lg px-4 py-2 text-primary focus:ring-2 focus:ring-blue-500 outline-none"
-                        value={formData.subject}
-                        onChange={e => setFormData({...formData, subject: e.target.value})}
-                        placeholder="Email Subject"
-                      />
-                    </div>
-                  )}
-
+                  {/* Quick Variables */}
                   <div>
-                    <label className="block text-xs font-semibold text-secondary mb-2">QUICK VARIABLES</label>
-                    <div className="flex gap-2 flex-wrap">
-                      {['name', 'email', 'company', 'date', 'amount', 'invoice_number'].map(vKey => (
-                        <button 
-                          key={vKey}
-                          onClick={() => insertVariable(vKey)}
-                          className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs rounded-full hover:scale-105 transition-transform"
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="block text-sm font-medium text-gray-900 dark:text-white">
+                        Quick Variables
+                      </label>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        Click to insert
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                      {[
+                        { name: 'name', label: 'Name' },
+                        { name: 'email', label: 'Email' },
+                        { name: 'company', label: 'Company' },
+                        { name: 'date', label: 'Date' },
+                        { name: 'amount', label: 'Amount' },
+                        { name: 'invoice_number', label: 'Invoice #' },
+                      ].map((variable) => (
+                        <button
+                          key={variable.name}
+                          type="button"
+                          onClick={() => insertVariable(variable.name)}
+                          className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-500 transition-colors flex flex-col items-center"
+                          title={`Insert {{${variable.name}}}`}
                         >
-                          {`{{${vKey}}}`}
+                          <span className="text-xs font-mono mb-1">{`{{${variable.name}}}`}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">{variable.label}</span>
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-secondary mb-1">
-                      CONTENT {formData.type !== 'EMAIL' && '*'}
-                    </label>
-                    <textarea 
-                      className="w-full h-64 bg-gray-50 dark:bg-gray-600 border border-color rounded-lg p-4 font-mono text-sm text-primary focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                      value={formData.type === 'EMAIL' ? formData.htmlBody : formData.content}
-                      onChange={e => {
-                        if (formData.type === 'EMAIL') {
-                          setFormData({...formData, htmlBody: e.target.value});
-                        } else {
-                          setFormData({...formData, content: e.target.value});
-                        }
-                      }}
-                      placeholder={formData.type === 'EMAIL' ? "HTML email content..." : "Message content..."}
-                    />
-                  </div>
-
+                  {/* Subject Line (Email only) */}
                   {formData.type === 'EMAIL' && (
                     <div>
-                      <label className="block text-xs font-semibold text-secondary mb-1">TEXT VERSION (Optional)</label>
-                      <textarea 
-                        className="w-full h-32 bg-gray-50 dark:bg-gray-700 border border-color rounded-lg p-4 font-mono text-sm text-primary focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                        value={formData.textBody}
-                        onChange={e => setFormData({...formData, textBody: e.target.value})}
-                        placeholder="Plain text version for email clients..."
-                      />
+                      <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        Subject Line *
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={formData.subject}
+                          onChange={(e) => setFormData({...formData, subject: e.target.value})}
+                          placeholder="Enter email subject..."
+                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none pr-20"
+                        />
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400">
+                          {formData.subject.length}/60
+                        </div>
+                      </div>
+                      {formData.subject.length > 60 && (
+                        <p className="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center">
+                          <ExclamationCircleIcon className="h-3 w-3 mr-1" />
+                          Subject line may be truncated on mobile devices
+                        </p>
+                      )}
                     </div>
                   )}
+
+                  {/* Content Editor */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-900 dark:text-white">
+                        {formData.type === 'EMAIL' ? 'HTML Content *' : 'Message Content *'}
+                      </label>
+                      <div className="flex items-center space-x-2">
+                        {formData.type === 'SMS' && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {formData.content.length}/160 characters
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const content = formData.type === 'EMAIL' ? formData.htmlBody : formData.content;
+                            const wordCount = content ? content.split(/\s+/).filter(w => w.length > 0).length : 0;
+                            alert(`Content Analysis:\nWords: ${wordCount}\nCharacters: ${content?.length || 0}\nVariables: ${formData.variables.length}`);
+                          }}
+                          className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700"
+                        >
+                          Analyze
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {formData.type === 'EMAIL' ? (
+                      <textarea
+                        id="template-content"
+                        value={formData.htmlBody}
+                        onChange={(e) => setFormData({...formData, htmlBody: e.target.value})}
+                        placeholder="Enter your HTML content here. Use {{variables}} for personalization."
+                        rows={12}
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-mono text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                      />
+                    ) : (
+                      <textarea
+                        id="template-content"
+                        value={formData.content}
+                        onChange={(e) => setFormData({...formData, content: e.target.value})}
+                        placeholder={`Enter your ${formData.type.toLowerCase()} message...`}
+                        rows={8}
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-mono text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                      />
+                    )}
+                    
+                    {/* Text version for Email */}
+                    {formData.type === 'EMAIL' && (
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                          Plain Text Version (Optional)
+                          <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">For email clients without HTML support</span>
+                        </label>
+                        <textarea
+                          value={formData.textBody}
+                          onChange={(e) => setFormData({...formData, textBody: e.target.value})}
+                          placeholder="Plain text version of your email..."
+                          rows={4}
+                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-mono text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Preview Section */}
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Preview</h3>
+                    <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                      {formData.type === 'EMAIL' ? (
+                        <div className="space-y-3">
+                          <div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Subject:</div>
+                            <div className="text-lg font-medium text-gray-900 dark:text-white">
+                              {formData.subject || 'No subject set'}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Content Preview:</div>
+                            <div className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap max-h-60 overflow-y-auto p-3 bg-white dark:bg-gray-800 rounded border">
+                              {formData.htmlBody 
+                                ? (formData.htmlBody.length > 500 
+                                    ? formData.htmlBody.substring(0, 500) + '...' 
+                                    : formData.htmlBody)
+                                : 'No content yet'
+                              }
+                            </div>
+                          </div>
+                        </div>
+                      ) : formData.type === 'SMS' ? (
+                        <div className="flex justify-end">
+                          <div className="max-w-xs">
+                            <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-2xl rounded-br-none">
+                              <p className="text-sm text-gray-900 dark:text-white">
+                                {formData.content || 'SMS message preview...'}
+                              </p>
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-right">
+                              {formData.content ? `${formData.content.length} characters` : 'Empty'}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="max-w-md">
+                          <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-2xl">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
+                                <BellIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">App Notification</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">Now</div>
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-900 dark:text-white">
+                              {formData.content || 'Push notification preview...'}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Live Preview */}
-              <div className="hidden md:flex flex-col w-1/3 bg-gray-100 dark:bg-black/20 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-bold text-secondary uppercase">Live Preview</h3>
-                  <EyeIcon className="h-4 w-4 text-secondary" />
-                </div>
-                
-                <div className="flex-1 bg-white dark:bg-gray-600 rounded-2xl shadow-xl border border-color overflow-hidden flex flex-col">
-                  <div className="bg-gray-100 dark:bg-gray-500 px-4 py-3 border-b border-color flex space-x-2">
-                    <div className="w-2 h-2 rounded-full bg-red-400"></div>
-                    <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
-                    <div className="w-2 h-2 rounded-full bg-green-400"></div>
+              {/* Sidebar - Tips & Stats WITH ACTION BUTTONS */}
+              <div className="lg:w-80 border-l border-gray-200 dark:border-gray-700 p-6 bg-gray-50 dark:bg-gray-900/50 flex flex-col">
+                <div className="flex-1 space-y-6">
+                  {/* Tips Section */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3 flex items-center">
+                      <LightBulbIcon className="h-4 w-4 mr-2 text-yellow-500" />
+                      Quick Tips
+                    </h4>
+                    <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                      <li className="flex items-start">
+                        <div className="h-1.5 w-1.5 bg-blue-500 rounded-full mr-2 mt-1.5"></div>
+                        Use <code className="mx-1 px-1 bg-gray-200 dark:bg-gray-800 rounded">{"{{name}}"}</code> for personalization
+                      </li>
+                      <li className="flex items-start">
+                        <div className="h-1.5 w-1.5 bg-blue-500 rounded-full mr-2 mt-1.5"></div>
+                        Keep {formData.type === 'EMAIL' ? 'subject lines' : 'messages'} concise
+                      </li>
+                      <li className="flex items-start">
+                        <div className="h-1.5 w-1.5 bg-blue-500 rounded-full mr-2 mt-1.5"></div>
+                        Test with a small group before sending to all recipients
+                      </li>
+                    </ul>
                   </div>
-                  
-                  <div className="p-6 flex-1 overflow-y-auto">
-                    {formData.type === 'EMAIL' ? (
-                      <div className="space-y-4">
-                         <div className="h-4 w-1/2 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                         <div className="h-6 w-3/4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
-                         <div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
-                         <div className="text-sm text-primary whitespace-pre-wrap">
-                           {formData.htmlBody || formData.content || "Your email content will appear here..."}
-                         </div>
-                      </div>
-                    ) : formData.type === 'SMS' ? (
-                      <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-xl max-w-[80%] ml-auto">
-                        <p className="text-sm text-primary whitespace-pre-wrap">{formData.content || "SMS message preview..."}</p>
-                      </div>
-                    ) : (
-                      <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-xl">
-                        <div className="flex items-start space-x-2">
-                          <BellIcon className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium text-primary">Notification</p>
-                            <p className="text-sm text-primary whitespace-pre-wrap mt-1">{formData.content || "Push notification preview..."}</p>
-                          </div>
+
+                  {/* Stats Section */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Template Stats</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Variables Used</div>
+                        <div className="text-lg font-bold text-gray-900 dark:text-white">
+                          {formData.variables.length}
                         </div>
                       </div>
-                    )}
+                      <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Content Length</div>
+                        <div className="text-lg font-bold text-gray-900 dark:text-white">
+                          {formData.type === 'EMAIL' 
+                            ? formData.htmlBody?.length || 0
+                            : formData.content?.length || 0
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Best Practices */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Best Practices</h4>
+                    <div className="space-y-2">
+                      {formData.type === 'EMAIL' ? (
+                        <>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">✓ Subject under 60 characters</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">✓ Clear call-to-action</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">✓ Mobile responsive design</div>
+                        </>
+                      ) : formData.type === 'SMS' ? (
+                        <>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">✓ Keep under 160 characters</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">✓ Clear, concise language</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">✓ Include opt-out instructions</div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">✓ Title under 30 characters</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">✓ Body under 100 characters</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">✓ Clear action button text</div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Desktop Action Buttons */}
+                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="space-y-3">
+                      <button
+                        onClick={handleSubmit}
+                        disabled={!formData.name || (formData.type === 'EMAIL' ? !formData.htmlBody : !formData.content)}
+                        className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center"
+                      >
+                        <SparklesIcon className="h-5 w-5 mr-2" />
+                        {isEditMode ? 'Update Template' : 'Create Template'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowModal(false);
+                          resetForm();
+                        }}
+                        className="w-full py-3 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg font-medium hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                      {isEditMode ? 'Save your changes' : 'Create and save this template'}
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-color bg-gray-50 dark:bg-gray-800/50 flex justify-end space-x-3">
-              <button 
-                onClick={() => setShowModal(false)}
+            {/* Mobile Action Bar - Only shows on mobile */}
+            <div className="lg:hidden px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-between space-x-3">
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  resetForm();
+                }}
                 className="px-6 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg font-medium hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleSubmit}
-                disabled={!formData.name || (formData.type !== 'EMAIL' && !formData.content)}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                disabled={!formData.name || (formData.type === 'EMAIL' ? !formData.htmlBody : !formData.content)}
+                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isEditMode ? 'Save Changes' : 'Create Template'}
               </button>
