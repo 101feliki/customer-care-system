@@ -7,6 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Add enum definition BEFORE using it
+enum UserRole {
+  USER
+  ADMIN
+  SUPERADMIN
+}
+
 model Notification {
   id          String    @id @default(uuid())
   recipientId String
@@ -53,7 +60,7 @@ model User {
   email                String                  @unique
   password             String
   name                 String
-  role                 String                  @default("user")
+  role                 UserRole                @default(USER) // Note: No quotes for enum value
   isVerified           Boolean                 @default(false)
   verificationToken    String?
   resetPasswordToken   String?
