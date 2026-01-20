@@ -14,67 +14,37 @@ export class AuthService {
   ) {}
 
   async login(email: string, password: string) {
-    this.logger.debug(`🔐 Login attempt for: ${email}`);
+  const user = await this.usersRepository.findByEmail(email);
+
+  if (!user) throw new UnauthorizedException('Invalid credentials');
+  if (!user.isVerified) throw new UnauthorizedException('Verify email first');
+
+  const valid = await user.comparePassword(password);
+  if (!valid) throw new UnauthorizedException('Invalid credentials');
+
+  const tokens = await this.generateTokens(user);
+
+  return {
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    },
+    ...tokens,
+  };
+}
+
+
+  generateToken(user: User): string {
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      name: user.name,
+    };
     
-    try {
-      // 1. Find user
-      const user = await this.usersRepository.findByEmail(email);
-      this.logger.debug(`User found: ${user ? 'YES' : 'NO'}`);
-      
-      if (!user) {
-        this.logger.warn(`User not found: ${email}`);
-        throw new UnauthorizedException('Invalid credentials');
-      }
-
-      // 2. Check if email is verified
-      if (!user.isVerified) {
-        this.logger.warn(`User not verified: ${email}`);
-        throw new UnauthorizedException('Please verify your email first');
-      }
-
-      // 3. Check password
-      this.logger.debug('Checking password...');
-      
-      let isPasswordValid = false;
-      try {
-        // Direct bcrypt comparison
-        isPasswordValid = await bcrypt.compare(password, user.password);
-        this.logger.debug(`Password check via bcrypt.compare: ${isPasswordValid}`);
-      } catch (compareError: unknown) {
-        const errorMessage = compareError instanceof Error ? compareError.message : 'Unknown error';
-        this.logger.error(`Password comparison error: ${errorMessage}`);
-        throw new UnauthorizedException('Invalid credentials');
-      }
-
-      if (!isPasswordValid) {
-        this.logger.warn(`Invalid password for user: ${email}`);
-        throw new UnauthorizedException('Invalid credentials');
-      }
-
-      // 4. Generate tokens with longer expiry
-      this.logger.debug('✅ Password valid, generating tokens...');
-      const tokens = await this.generateTokens(user);
-
-      this.logger.log(`✅ Successful login for: ${email}`);
-      
-      return {
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        },
-        ...tokens,
-      };
-      
-    } catch (error: unknown) {
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      }
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Login error: ${errorMessage}`);
-      throw new InternalServerErrorException('Login failed');
-    }
+    return this.jwtService.sign(payload);
   }
 
   async register(email: string, password: string, name: string) {
@@ -88,8 +58,16 @@ export class AuthService {
       }
 
       // Create user
-      const user = new User({ email, password, name });
-      await user.hashPassword();
+      const user = new User();
+user.email = email;
+user.password = password;
+user.name = name;
+
+await user.hashPassword();
+user.verify();
+
+await this.usersRepository.create(user);
+
       
       // Mark as verified for now (skip email verification)
       user.verify();
@@ -161,7 +139,8 @@ export class AuthService {
       message: 'Password reset successfully',
     };
   }
-
+  
+  
   async verifyEmail(token: string) {
     this.logger.debug(`Verify email with token: ${token.substring(0, 10)}...`);
     

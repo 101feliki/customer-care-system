@@ -10,6 +10,7 @@ import { EmailService } from './infra/services/email.service';
 import { SmsService } from './infra/services/sms.service';
 import { SendBulkNotifications } from './app/use-cases/send-bulk-notifications';
 import { MailerService } from './infra/mail/mailer.service';
+import { AdminModule } from '../admin/admin.modules';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { MailerService } from './infra/mail/mailer.service';
     HttpModule,
     DatabaseModule,
     AuthModule,
+    AdminModule,
   ],
   controllers: [
     RecipientsController,
