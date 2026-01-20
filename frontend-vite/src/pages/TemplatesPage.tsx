@@ -12,18 +12,14 @@ import {
   ChatBubbleBottomCenterTextIcon, 
   BellIcon,
   XMarkIcon,
-  EyeIcon,
+  
   PaperAirplaneIcon,
-  UserIcon,
-  PhoneIcon,
-  GlobeAltIcon,
-  XCircleIcon,
-  ArrowPathIcon,
+ 
   SparklesIcon,
   LightBulbIcon,
   ExclamationCircleIcon,
   CheckCircleIcon,
-  UsersIcon
+  
 } from '@heroicons/react/24/outline';
 
 // --- Types matching your NestJS Backend ---
@@ -650,7 +646,7 @@ const TemplatesPage: React.FC = () => {
                     <p className="text-secondary font-mono text-xs leading-relaxed">
                       {getTemplateContent(template)}
                     </p>
-                    <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-gray-50 dark:from-gray-900 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 w-full h-8 bg-linear-to-t from-gray-50 dark:from-gray-900 to-transparent"></div>
                   </div>
 
                   <div className="flex justify-between items-center text-xs text-secondary mt-2">
@@ -1065,7 +1061,7 @@ const TemplatesPage: React.FC = () => {
                       <button
                         onClick={handleSubmit}
                         disabled={!formData.name || (formData.type === 'EMAIL' ? !formData.htmlBody : !formData.content)}
-                        className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center"
+                        className="w-full py-3 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center"
                       >
                         <SparklesIcon className="h-5 w-5 mr-2" />
                         {isEditMode ? 'Update Template' : 'Create Template'}
@@ -1102,7 +1098,7 @@ const TemplatesPage: React.FC = () => {
               <button
                 onClick={handleSubmit}
                 disabled={!formData.name || (formData.type === 'EMAIL' ? !formData.htmlBody : !formData.content)}
-                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-6 py-2 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isEditMode ? 'Save Changes' : 'Create Template'}
               </button>

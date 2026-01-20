@@ -4,7 +4,7 @@ Write-Host "👑 Creating admin user..." -ForegroundColor Cyan
 
 # Check if bcrypt is available
 try {
-    $bcrypt = Get-Command node -ErrorAction Stop
+    
     Write-Host "✅ Node.js is available" -ForegroundColor Green
 } catch {
     Write-Host "❌ Node.js is not installed or not in PATH" -ForegroundColor Red

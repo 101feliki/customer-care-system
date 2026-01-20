@@ -1,21 +1,40 @@
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
+@Entity('users')
 export class User {
-  public id?: string;
-  public email: string;
-  public password: string;
-  public name: string;
-  public role: string;
-  public isVerified: boolean;
-  public verificationToken?: string;
-  public resetPasswordToken?: string;
-  public resetPasswordExpires?: Date;
-  public createdAt?: Date;
-  public updatedAt?: Date;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  constructor(props: Partial<User>) {
-    Object.assign(this, props);
-  }
+  @Column({ unique: true })
+  email: string;
+
+  @Column()
+  password: string;
+
+  @Column()
+  name: string;
+
+  @Column({ default: 'user' })
+  role: 'user' | 'admin' | 'superadmin';
+
+  @Column({ default: false })
+  isVerified: boolean;
+
+  @Column({ nullable: true })
+  verificationToken?: string;
+
+  @Column({ nullable: true })
+  resetPasswordToken?: string;
+
+  @Column({ nullable: true })
+  resetPasswordExpires?: Date;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 
   async hashPassword(): Promise<void> {
     const salt = await bcrypt.genSalt(10);
@@ -51,5 +70,25 @@ export class User {
     this.password = newPassword;
     this.resetPasswordToken = undefined;
     this.resetPasswordExpires = undefined;
+  }
+
+  isAdmin(): boolean {
+    return this.role === 'admin' || this.role === 'superadmin';
+  }
+
+  isSuperAdmin(): boolean {
+    return this.role === 'superadmin';
+  }
+
+  promoteToAdmin(): void {
+    this.role = 'admin';
+  }
+
+  promoteToSuperAdmin(): void {
+    this.role = 'superadmin';
+  }
+
+  demoteToUser(): void {
+    this.role = 'user';
   }
 }
