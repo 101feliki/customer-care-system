@@ -1,22 +1,20 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from '../../app/entities/user.entity';
+// src/infra/admin/admin.service.ts
+import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
+import { PrismaService } from '../database/prisma/prisma.service';
 import { CreateAdminDto, UpdateUserRoleDto, UserQueryDto } from '../http/dtos/admin.dto';
-import { AuthService } from './auth.service';
+import { User } from '../../app/entities/user.entity';
+import { PrismaUserMapper } from '../database/prisma/mappers/prisma-user-mapper';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
   constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
-    private authService: AuthService,
+    private prisma: PrismaService,
   ) {}
 
   async createAdmin(createAdminDto: CreateAdminDto): Promise<any> {
     // Check if user already exists
-    const existingUser = await this.userRepository.findOne({
+    const existingUser = await this.prisma.user.findUnique({
       where: { email: createAdminDto.email }
     });
 
@@ -24,23 +22,30 @@ export class AdminService {
       throw new BadRequestException('User with this email already exists');
     }
 
-    // Create new admin user
-    const newAdmin = new User();
-    newAdmin.email = createAdminDto.email;
-    newAdmin.password = createAdminDto.password;
-    newAdmin.name = createAdminDto.name;
-    newAdmin.role = createAdminDto.role || 'admin';
-    newAdmin.isVerified = true; // Admins are auto-verified
+    // Create new user entity
+    const newUser = new User({
+      email: createAdminDto.email,
+      password: createAdminDto.password,
+      name: createAdminDto.name,
+      role: createAdminDto.role || 'admin',
+      isVerified: true, // Admins are auto-verified
+    });
 
     // Hash password
-    await newAdmin.hashPassword();
+    await newUser.hashPassword();
 
-    // Save to database
-    const savedUser = await this.userRepository.save(newAdmin);
+    // Convert to Prisma format and save
+    const prismaData = PrismaUserMapper.toPrisma(newUser);
+    
+    const savedUser = await this.prisma.user.create({
+      data: prismaData,
+    });
 
-    // Generate JWT token (you need to add this method to AuthService)
-    // For now, let's return the user without token
-    const { password, ...userWithoutPassword } = savedUser;
+    // Convert back to domain entity
+    const domainUser = PrismaUserMapper.toDomain(savedUser);
+
+    // Remove password from response
+    const { password, ...userWithoutPassword } = domainUser;
 
     return {
       message: 'Admin created successfully',
@@ -50,35 +55,34 @@ export class AdminService {
 
   async getAllUsers(query: UserQueryDto): Promise<any> {
     const { search, role, isVerified } = query;
-    const queryBuilder = this.userRepository.createQueryBuilder('user');
+    const where: any = {};
 
     // Apply filters
     if (search) {
-      queryBuilder.where(
-        '(user.email LIKE :search OR user.name LIKE :search)',
-        { search: `%${search}%` }
-      );
+      where.OR = [
+        { email: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
     if (role) {
-      queryBuilder.andWhere('user.role = :role', { role });
+      where.role = role.toUpperCase();
     }
 
     if (isVerified !== undefined) {
-      queryBuilder.andWhere('user.isVerified = :isVerified', { 
-        isVerified: isVerified === 'true' 
-      });
+      where.isVerified = isVerified === 'true';
     }
 
-    // Order by creation date
-    queryBuilder.orderBy('user.createdAt', 'DESC');
+    // Get users with Prisma
+    const users = await this.prisma.user.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
 
-    // Get users
-    const users = await queryBuilder.getMany();
-
-    // Remove passwords from response
-    const usersWithoutPasswords = users.map(user => {
-      const { password, ...userWithoutPassword } = user;
+    // Convert to domain entities and remove passwords
+    const usersWithoutPasswords = users.map(prismaUser => {
+      const domainUser = PrismaUserMapper.toDomain(prismaUser);
+      const { password, ...userWithoutPassword } = domainUser;
       return userWithoutPassword;
     });
 
@@ -89,28 +93,37 @@ export class AdminService {
   }
 
   async getUserById(id: string): Promise<any> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    const { password, ...userWithoutPassword } = user;
+    const domainUser = PrismaUserMapper.toDomain(user);
+    const { password, ...userWithoutPassword } = domainUser;
+    
     return userWithoutPassword;
   }
 
   async updateUserRole(id: string, role: 'user' | 'admin' | 'superadmin'): Promise<any> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    // Update role
-    user.role = role;
-    await this.userRepository.save(user);
+    // Convert role to uppercase for Prisma
+    const prismaRole = role.toUpperCase() as 'USER' | 'ADMIN' | 'SUPERADMIN';
+    
+    // Update role in database
+    const updatedUser = await this.prisma.user.update({
+      where: { id },
+      data: { role: prismaRole },
+    });
 
-    const { password, ...userWithoutPassword } = user;
+    // Convert to domain entity
+    const domainUser = PrismaUserMapper.toDomain(updatedUser);
+    const { password, ...userWithoutPassword } = domainUser;
     
     return {
       message: 'User role updated successfully',
@@ -119,13 +132,15 @@ export class AdminService {
   }
 
   async deleteUser(id: string): Promise<any> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    await this.userRepository.remove(user);
+    await this.prisma.user.delete({
+      where: { id },
+    });
 
     return {
       message: 'User deleted successfully',
@@ -134,34 +149,39 @@ export class AdminService {
   }
 
   async getAdminStats(): Promise<any> {
-    const totalUsers = await this.userRepository.count();
-    const verifiedUsers = await this.userRepository.count({ where: { isVerified: true } });
-    const adminUsers = await this.userRepository.count({ where: { role: 'admin' } });
-    const superadminUsers = await this.userRepository.count({ where: { role: 'superadmin' } });
-    const regularUsers = await this.userRepository.count({ where: { role: 'user' } });
+    const totalUsers = await this.prisma.user.count();
+    const verifiedUsers = await this.prisma.user.count({ 
+      where: { isVerified: true } 
+    });
+    
+    const byRole = {
+      admin: await this.prisma.user.count({ where: { role: 'ADMIN' } }),
+      superadmin: await this.prisma.user.count({ where: { role: 'SUPERADMIN' } }),
+      user: await this.prisma.user.count({ where: { role: 'USER' } }),
+    };
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const newToday = await this.userRepository
-      .createQueryBuilder('user')
-      .where('user.createdAt >= :today', { today })
-      .getCount();
+    
+    const newToday = await this.prisma.user.count({
+      where: {
+        createdAt: {
+          gte: today,
+        },
+      },
+    });
 
     return {
       totalUsers,
       verifiedUsers,
       unverifiedUsers: totalUsers - verifiedUsers,
-      byRole: {
-        admin: adminUsers,
-        superadmin: superadminUsers,
-        user: regularUsers,
-      },
+      byRole,
       newToday,
     };
   }
 
   async resendVerificationEmail(id: string): Promise<any> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -172,11 +192,18 @@ export class AdminService {
     }
 
     // Generate new verification token
-    const token = user.generateVerificationToken();
-    await this.userRepository.save(user);
+    const verificationToken = Math.random().toString(36).substring(2) + 
+                              Date.now().toString(36) + 
+                              Math.random().toString(36).substring(2);
+    
+    // Update user with new token
+    await this.prisma.user.update({
+      where: { id },
+      data: { verificationToken },
+    });
 
     // TODO: Implement email service
-    // await this.emailService.sendVerificationEmail(user.email, token);
+    // await this.emailService.sendVerificationEmail(user.email, verificationToken);
 
     return {
       message: 'Verification email sent successfully',
@@ -185,7 +212,7 @@ export class AdminService {
   }
 
   async adminResetPassword(id: string): Promise<any> {
-    const user = await this.userRepository.findOne({ where: { id } });
+    const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -193,9 +220,20 @@ export class AdminService {
 
     // Generate a temporary password
     const tempPassword = Math.random().toString(36).slice(-8);
-    user.password = tempPassword;
-    await user.hashPassword();
-    await this.userRepository.save(user);
+    
+    // Hash the temporary password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(tempPassword, salt);
+    
+    // Update user with new password
+    await this.prisma.user.update({
+      where: { id },
+      data: { 
+        password: hashedPassword,
+        resetPasswordToken: null,
+        resetPasswordExpires: null,
+      },
+    });
 
     // TODO: Implement email service
     // await this.emailService.sendTempPasswordEmail(user.email, tempPassword);
@@ -206,5 +244,25 @@ export class AdminService {
       // Only return temp password in development
       ...(process.env.NODE_ENV === 'development' && { tempPassword }),
     };
+  }
+
+  // Additional helper methods for frontend
+  async searchUsers(search: string): Promise<any> {
+    const users = await this.prisma.user.findMany({
+      where: {
+        OR: [
+          { email: { contains: search, mode: 'insensitive' } },
+          { name: { contains: search, mode: 'insensitive' } },
+        ],
+      },
+      take: 10, // Limit results
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return users.map(prismaUser => {
+      const domainUser = PrismaUserMapper.toDomain(prismaUser);
+      const { password, ...userWithoutPassword } = domainUser;
+      return userWithoutPassword;
+    });
   }
 }

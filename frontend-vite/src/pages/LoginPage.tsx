@@ -18,7 +18,7 @@ const LoginPage: React.FC = () => {
     setError('');
     
     try {
-      console.log('🔐 Attempting login with:', { email, password: '***' });
+      //console.log('🔐 Attempting login with:', { email, password: '***' });
       
       // Make REAL API call to your backend
       const response = await fetch('http://localhost:3001/auth/login', {
@@ -32,7 +32,7 @@ const LoginPage: React.FC = () => {
       console.log('📡 Login response status:', response.status);
       
       const data = await response.json();
-      console.log('✅ Login response data:', data);
+     // console.log('✅ Login response data:', data);
       
       if (!response.ok) {
         throw new Error(data.message || `Login failed: ${response.status}`);
@@ -41,23 +41,23 @@ const LoginPage: React.FC = () => {
       // Your backend returns: { user, accessToken, refreshToken }
       // Note: It's accessToken (camelCase), not access_token (snake_case)
       if (data.accessToken && data.user) {
-        console.log('✅ Found accessToken and user');
-        console.log('🔑 Token:', data.accessToken.substring(0, 50) + '...');
-        console.log('👤 User:', data.user);
+       // console.log('✅ Found accessToken and user');
+       // console.log('🔑 Token:', data.accessToken.substring(0, 50) + '...');
+        //console.log('👤 User:', data.user);
         
         login(data.accessToken, data.user);
         navigate('/dashboard');
       } 
       // If backend returns access_token (snake_case)
       else if (data.access_token && data.user) {
-        console.log('✅ Found access_token and user');
-        login(data.access_token, data.user);
+       // console.log('✅ Found access_token and user');
+       // login(data.access_token, data.user);
         navigate('/dashboard');
       }
       // If backend returns just token
       else if (data.token && data.user) {
-        console.log('✅ Found token and user');
-        login(data.token, data.user);
+       // console.log('✅ Found token and user');
+       // login(data.token, data.user);
         navigate('/dashboard');
       }
       // If user data is embedded in root

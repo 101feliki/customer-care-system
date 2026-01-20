@@ -1,15 +1,13 @@
 // admin/admin.module.ts
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminController } from '../src/infra/http/controllers/admin.controller';
 import { AdminService } from '../src/infra/services/admin.services';
-import { User } from '../src/app/entities/user.entity';
+import { PrismaService } from '../src/infra/database/prisma/prisma.service';
 import { AuthModule } from '../src/infra/auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
     AuthModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-secret-key',
@@ -17,7 +15,10 @@ import { JwtModule } from '@nestjs/jwt';
     }),
   ],
   controllers: [AdminController],
-  providers: [AdminService],
+  providers: [
+    AdminService,
+    PrismaService, // Add PrismaService here
+  ],
   exports: [AdminService],
 })
 export class AdminModule {}
