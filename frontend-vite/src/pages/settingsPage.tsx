@@ -23,8 +23,7 @@ import {
   EnvelopeIcon,
   XMarkIcon,
   KeyIcon,
-  SparklesIcon,
-  LightBulbIcon
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 
 // Types
@@ -72,19 +71,34 @@ const SettingsPage: React.FC = () => {
     notificationFrequency: 'immediate'
   });
 
+  // API Base URL - FIXED: Backend runs on port 3001
+  const API_BASE_URL = 'http://localhost:3001';
+
+  // Helper functions for role checks - FIXED: Handle both uppercase and lowercase
+  const isUserAdmin = () => {
+    const role = user?.role || '';
+    return role === 'ADMIN' || role === 'SUPERADMIN' || 
+           role === 'admin' || role === 'superadmin';
+  };
+
+  const isUserSuperAdmin = () => {
+    const role = user?.role || '';
+    return role === 'SUPERADMIN' || role === 'superadmin';
+  };
+
   const tabs = [
     { id: 'notifications', label: 'Notifications', icon: BellIcon },
     { id: 'profile', label: 'Profile', icon: UserIcon }
   ];
 
-  // Add admin tab if user is admin
-  if (user?.role === 'admin' || user?.role === 'superadmin') {
+  // Add admin tab if user is admin - FIXED: Use helper function
+  if (isUserAdmin()) {
     tabs.push({ id: 'admin', label: 'Admin', icon: ShieldCheckIcon });
   }
 
   // ========== REAL API FUNCTIONS ==========
 
-  // 1. FETCH USERS FROM BACKEND
+  // 1. FETCH USERS FROM BACKEND - FIXED: Use correct API URL
   const fetchUsers = async () => {
     if (!token) {
       console.log('❌ No token available');
@@ -98,7 +112,7 @@ const SettingsPage: React.FC = () => {
       setError('');
       console.log('🔍 Fetching users...');
       
-      const response = await fetch('/api/admin/users', {
+      const response = await fetch(`${API_BASE_URL}/admin/users`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -108,6 +122,11 @@ const SettingsPage: React.FC = () => {
       console.log('📡 Status:', response.status, response.statusText);
       
       if (!response.ok) {
+        if (response.status === 403) {
+          setError('Access denied. You do not have admin privileges.');
+          console.error('❌ 403 Forbidden - User is not an admin');
+          return;
+        }
         const errorText = await response.text();
         console.error('❌ HTTP Error:', response.status, errorText);
         throw new Error(`Failed to fetch users: ${response.status}`);
@@ -137,7 +156,7 @@ const SettingsPage: React.FC = () => {
       const mappedUsers: AdminUser[] = usersArray.map(item => ({
         id: item.id || '',
         email: item.email || '',
-        name: item.name || 'Unnamed User',
+        name: item.name || item.firstName + ' ' + item.lastName || 'Unnamed User',
         role: (item.role || 'USER').toUpperCase() as 'USER' | 'ADMIN' | 'SUPERADMIN',
         isVerified: item.isVerified || false,
         createdAt: item.createdAt || new Date().toISOString()
@@ -160,7 +179,7 @@ const SettingsPage: React.FC = () => {
     }
   };
 
-  // 2. CREATE USER
+  // 2. CREATE USER - FIXED: Use correct API URL
   const createUser = async (userData: typeof formData) => {
     if (!token) {
       toast.error('Please login first');
@@ -170,7 +189,7 @@ const SettingsPage: React.FC = () => {
     try {
       console.log('📤 Creating user:', userData.email);
       
-      const response = await fetch('/api/admin/users', {
+      const response = await fetch(`${API_BASE_URL}/admin/users`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -180,7 +199,7 @@ const SettingsPage: React.FC = () => {
           email: userData.email,
           name: userData.name,
           password: userData.password,
-          role: userData.role
+          role: userData.role.toLowerCase() // Backend expects lowercase
         })
       });
       
@@ -213,7 +232,7 @@ const SettingsPage: React.FC = () => {
     }
   };
 
-  // 3. CREATE ADMIN
+  // 3. CREATE ADMIN - FIXED: Use correct API URL
   const createAdmin = async (adminData: typeof formData) => {
     if (!token) {
       toast.error('Please login first');
@@ -223,7 +242,7 @@ const SettingsPage: React.FC = () => {
     try {
       console.log('📤 Creating admin:', adminData.email);
       
-      const response = await fetch('/api/admin/create-admin', {
+      const response = await fetch(`${API_BASE_URL}/admin/create-admin`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -233,7 +252,7 @@ const SettingsPage: React.FC = () => {
           email: adminData.email,
           name: adminData.name,
           password: adminData.password,
-          role: adminData.role
+          role: adminData.role.toLowerCase() // Backend expects lowercase
         })
       });
       
@@ -266,7 +285,7 @@ const SettingsPage: React.FC = () => {
     }
   };
 
-  // 4. UPDATE USER ROLE
+  // 4. UPDATE USER ROLE - FIXED: Use correct API URL
   const updateUserRole = async (userId: string, role: 'USER' | 'ADMIN' | 'SUPERADMIN') => {
     if (!token) {
       toast.error('Please login first');
@@ -276,13 +295,13 @@ const SettingsPage: React.FC = () => {
     try {
       console.log('📤 Updating user role:', { userId, role });
       
-      const response = await fetch(`/api/admin/users/${userId}/role`, {
+      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/role`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ role })
+        body: JSON.stringify({ role: role.toLowerCase() }) // Backend expects lowercase
       });
       
       console.log('📡 Response status:', response.status);
@@ -305,7 +324,7 @@ const SettingsPage: React.FC = () => {
     }
   };
 
-  // 5. DELETE USER
+  // 5. DELETE USER - FIXED: Use correct API URL
   const deleteUser = async (userId: string) => {
     if (!token) {
       toast.error('Please login first');
@@ -319,7 +338,7 @@ const SettingsPage: React.FC = () => {
     try {
       console.log('📤 Deleting user:', userId);
       
-      const response = await fetch(`/api/admin/users/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -348,7 +367,7 @@ const SettingsPage: React.FC = () => {
 
   // ========== EFFECTS ==========
   useEffect(() => {
-    if (activeTab === 'admin') {
+    if (activeTab === 'admin' && isUserAdmin()) {
       fetchUsers();
     }
   }, [activeTab]);
@@ -415,7 +434,7 @@ const SettingsPage: React.FC = () => {
       return;
     }
     
-    if (!formData.name || formData.name.length < 2) {
+    if (!formData.name || formData.name.trim().length < 2) {
       toast.error('Name must be at least 2 characters');
       return;
     }
@@ -456,69 +475,76 @@ const SettingsPage: React.FC = () => {
     );
   };
 
-  const renderUserRow = (userItem: AdminUser) => (
-    <tr key={userItem.id} className="border-b border-color hover:bg-hover/30 transition-colors">
-      <td className="p-4">
-        <div className="flex items-center space-x-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold">
-            {userItem.name.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <p className="font-medium text-primary">{userItem.name}</p>
-            <p className="text-sm text-secondary">{userItem.email}</p>
-          </div>
-        </div>
-      </td>
-      <td className="p-4">{renderRoleBadge(userItem.role)}</td>
-      <td className="p-4">
-        <div className="flex items-center">
-          {userItem.isVerified ? (
-            <div className="flex items-center text-green-500">
-              <CheckCircleIcon className="h-5 w-5 mr-2" />
-              <span>Verified</span>
+  const renderUserRow = (userItem: AdminUser) => {
+    const currentUserId = user?.id;
+    const isCurrentUser = currentUserId === userItem.id;
+    
+    return (
+      <tr key={userItem.id} className="border-b border-color hover:bg-hover/30 transition-colors">
+        <td className="p-4">
+          <div className="flex items-center space-x-3">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold">
+              {userItem.name.charAt(0).toUpperCase()}
             </div>
-          ) : (
-            <div className="flex items-center text-yellow-500">
-              <div className="h-5 w-5 rounded-full border-2 border-yellow-500 mr-2 flex items-center justify-center">
-                <span className="text-xs">!</span>
+            <div>
+              <p className="font-medium text-primary">{userItem.name}</p>
+              <p className="text-sm text-secondary">{userItem.email}</p>
+            </div>
+          </div>
+        </td>
+        <td className="p-4">{renderRoleBadge(userItem.role)}</td>
+        <td className="p-4">
+          <div className="flex items-center">
+            {userItem.isVerified ? (
+              <div className="flex items-center text-green-500">
+                <CheckCircleIcon className="h-5 w-5 mr-2" />
+                <span>Verified</span>
               </div>
-              <span>Pending</span>
-            </div>
-          )}
-        </div>
-      </td>
-      <td className="p-4 text-secondary text-sm">
-        {formatDate(userItem.createdAt)}
-      </td>
-      <td className="p-4">
-        <div className="flex items-center space-x-2">
-          {/* Change Role (Super Admin only, can't modify self) */}
-          {user?.role === 'superadmin' && user?.id !== userItem.id && (
-            <select
-              value={userItem.role}
-              onChange={(e) => updateUserRole(userItem.id, e.target.value as 'USER' | 'ADMIN' | 'SUPERADMIN')}
-              className="bg-primary border border-color rounded-lg px-3 py-1.5 text-sm text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="USER">User</option>
-              <option value="ADMIN">Admin</option>
-              <option value="SUPERADMIN">Super Admin</option>
-            </select>
-          )}
+            ) : (
+              <div className="flex items-center text-yellow-500">
+                <div className="h-5 w-5 rounded-full border-2 border-yellow-500 mr-2 flex items-center justify-center">
+                  <span className="text-xs">!</span>
+                </div>
+                <span>Pending</span>
+              </div>
+            )}
+          </div>
+        </td>
+        <td className="p-4 text-secondary text-sm">
+          {formatDate(userItem.createdAt)}
+        </td>
+        <td className="p-4">
+          <div className="flex items-center space-x-2">
+            {/* Change Role (Super Admin only, can't modify self) */}
+            {isUserSuperAdmin() && !isCurrentUser && (
+              <select
+                value={userItem.role}
+                onChange={(e) => updateUserRole(userItem.id, e.target.value as 'USER' | 'ADMIN' | 'SUPERADMIN')}
+                className="bg-primary border border-color rounded-lg px-3 py-1.5 text-sm text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={isCurrentUser}
+              >
+                <option value="USER">User</option>
+                <option value="ADMIN">Admin</option>
+                <option value="SUPERADMIN">Super Admin</option>
+              </select>
+            )}
 
-          {/* Delete User (Super Admin only, can't delete self) */}
-          {user?.role === 'superadmin' && user?.id !== userItem.id && (
-            <button
-              onClick={() => deleteUser(userItem.id)}
-              className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-              title="Delete User"
-            >
-              <TrashIcon className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-      </td>
-    </tr>
-  );
+            {/* Delete User (Super Admin only, can't delete self) */}
+            {isUserSuperAdmin() && !isCurrentUser && (
+              <button
+                onClick={() => deleteUser(userItem.id)}
+                className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                title="Delete User"
+                disabled={isCurrentUser}
+              >
+                <TrashIcon className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </td>
+      </tr>
+    );
+  };
 
   // ========== CREATE USER MODAL ==========
   const renderCreateUserModal = (isAdmin: boolean) => {
@@ -578,6 +604,7 @@ const SettingsPage: React.FC = () => {
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                   placeholder={isAdmin ? "admin@example.com" : "user@example.com"}
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-color bg-primary text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  autoFocus
                 />
               </div>
             </div>
@@ -966,7 +993,7 @@ const SettingsPage: React.FC = () => {
                     </div>
 
                     {/* Create Admin Card (Super Admin Only) */}
-                    {user?.role === 'superadmin' && (
+                    {isUserSuperAdmin() && (
                       <div className="bg-card border border-color rounded-2xl p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden">
                         {/* Gradient background effect */}
                         <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -1057,6 +1084,14 @@ const SettingsPage: React.FC = () => {
                           <ExclamationCircleIcon className="h-5 w-5 mr-2" />
                           {error}
                         </p>
+                        {error.includes('403') && (
+                          <button 
+                            onClick={() => window.location.reload()}
+                            className="mt-2 text-sm text-blue-600 hover:underline"
+                          >
+                            Refresh page and try again
+                          </button>
+                        )}
                       </div>
                     ) : filteredUsers.length === 0 ? (
                       <div className="text-center py-12">
