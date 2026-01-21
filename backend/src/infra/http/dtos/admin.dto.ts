@@ -5,7 +5,8 @@ import {
   IsEnum, 
   IsOptional, 
   MinLength, 
-  IsBooleanString 
+  IsBooleanString,
+  IsBoolean 
 } from 'class-validator';
 
 export class CreateUserDto {
@@ -31,7 +32,12 @@ export class UpdateUserRoleDto {
   @IsEnum(['user', 'admin', 'superadmin'])
   role: 'user' | 'admin' | 'superadmin';
 }
+  
 
+export class VerifyUserDto {
+  @IsBoolean()
+  isVerified: boolean;
+}
 export class UserQueryDto {
   @IsOptional()
   @IsString()

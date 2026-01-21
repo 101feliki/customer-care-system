@@ -180,57 +180,73 @@ const SettingsPage: React.FC = () => {
   };
 
   // 2. CREATE USER - FIXED: Use correct API URL
-  const createUser = async (userData: typeof formData) => {
-    if (!token) {
-      toast.error('Please login first');
-      return;
-    }
+  // Update your createUser function to log more details
+const createUser = async (userData: typeof formData) => {
+  if (!token) {
+    toast.error('Please login first');
+    return;
+  }
 
-    try {
-      console.log('📤 Creating user:', userData.email);
-      
-      const response = await fetch(`${API_BASE_URL}/admin/users`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email: userData.email,
-          name: userData.name,
-          password: userData.password,
-          role: userData.role.toLowerCase() // Backend expects lowercase
-        })
-      });
-      
-      console.log('📡 Response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
-        
-        // Try to parse JSON error
-        try {
-          const errorData = JSON.parse(errorText);
-          throw new Error(errorData.message || errorData.error || 'Failed to create user');
-        } catch {
-          throw new Error(`Failed to create user: ${response.status} ${response.statusText}`);
-        }
+  try {
+    console.log('📤 Creating user:', userData.email);
+    console.log('🔐 Using token:', token.substring(0, 30) + '...');
+    
+    // Decode and log the token payload
+    const tokenParts = token.split('.');
+    if (tokenParts.length === 3) {
+      try {
+        const payload = JSON.parse(atob(tokenParts[1]));
+        console.log('🔐 Current user role from JWT:', payload.role);
+        console.log('🔐 Current user ID:', payload.sub);
+      } catch (e) {
+        console.error('Failed to decode token:', e);
       }
-      
-      const responseData = await response.json();
-      console.log('✅ User created:', responseData);
-      
-      toast.success('User created successfully!');
-      fetchUsers(); // Refresh list
-      return responseData;
-      
-    } catch (error: any) {
-      console.error('❌ Error creating user:', error);
-      toast.error(error.message || 'Failed to create user');
-      throw error;
     }
-  };
+    
+    const response = await fetch(`${API_BASE_URL}/admin/users`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: userData.email,
+        name: userData.name,
+        password: userData.password,
+        role: userData.role.toLowerCase()
+      })
+    });
+    
+    console.log('📡 Response status:', response.status);
+    console.log('📡 Response headers:', Object.fromEntries([...response.headers]));
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Full error response:', errorText);
+      
+      // Try to parse JSON error
+      try {
+        const errorData = JSON.parse(errorText);
+        console.error('❌ Parsed error:', errorData);
+        throw new Error(errorData.message || errorData.error || `Failed to create user: ${response.status}`);
+      } catch {
+        throw new Error(`Failed to create user: ${response.status} ${response.statusText}\n${errorText}`);
+      }
+    }
+    
+    const responseData = await response.json();
+    console.log('✅ User created:', responseData);
+    
+    toast.success('User created successfully!');
+    fetchUsers(); // Refresh list
+    return responseData;
+    
+  } catch (error: any) {
+    console.error('❌ Error creating user:', error);
+    toast.error(error.message || 'Failed to create user');
+    throw error;
+  }
+};
 
   // 3. CREATE ADMIN - FIXED: Use correct API URL
   const createAdmin = async (adminData: typeof formData) => {
@@ -322,7 +338,77 @@ const SettingsPage: React.FC = () => {
       console.error('❌ Error updating role:', error);
       toast.error(error.message || 'Failed to update role');
     }
-  };
+  }; 
+
+  const verifyUser = async (userId: string) => {
+  if (!token) {
+    toast.error('Please login first');
+    return;
+  }
+
+  try {
+    console.log('📤 Verifying user:', userId);
+    
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/send-verification`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('📡 Response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Error response:', errorText);
+      throw new Error(`Failed to verify user: ${response.status}`);
+    }
+    
+    toast.success('Verification email sent!');
+    fetchUsers(); // Refresh list
+    
+  } catch (error: any) {
+    console.error('❌ Error verifying user:', error);
+    toast.error(error.message || 'Failed to verify user');
+  }
+};
+
+// Add a direct verify function (without sending email)
+const markUserAsVerified = async (userId: string) => {
+  if (!token) {
+    toast.error('Please login first');
+    return;
+  }
+
+  try {
+    console.log('📤 Marking user as verified:', userId);
+    
+    // You need to create this endpoint in your backend
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/verify`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    console.log('📡 Response status:', response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Error response:', errorText);
+      throw new Error(`Failed to mark user as verified: ${response.status}`);
+    }
+    
+    toast.success('User marked as verified!');
+    fetchUsers(); // Refresh list
+    
+  } catch (error: any) {
+    console.error('❌ Error marking user as verified:', error);
+    toast.error(error.message || 'Failed to verify user');
+  }
+};
 
   // 5. DELETE USER - FIXED: Use correct API URL
   const deleteUser = async (userId: string) => {
@@ -483,7 +569,7 @@ const SettingsPage: React.FC = () => {
       <tr key={userItem.id} className="border-b border-color hover:bg-hover/30 transition-colors">
         <td className="p-4">
           <div className="flex items-center space-x-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold">
+            <div className="h-10 w-10 rounded-xl bg-linear-to-tr from-blue-600 to-blue-600 flex items-center justify-center text-white font-bold">
               {userItem.name.charAt(0).toUpperCase()}
             </div>
             <div>
@@ -528,6 +614,70 @@ const SettingsPage: React.FC = () => {
                 <option value="SUPERADMIN">Super Admin</option>
               </select>
             )}
+
+            // Add this section to your admin tab
+{isUserSuperAdmin() && (
+  <div className="bg-card border border-color rounded-2xl p-6">
+    <h4 className="font-bold text-lg text-primary mb-4 flex items-center">
+      <CheckCircleIcon className="h-5 w-5 mr-2 text-green-500" />
+      User Verification Management
+    </h4>
+    
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Send verification to all unverified */}
+      <button
+        onClick={async () => {
+          const unverifiedUsers = users.filter(u => !u.isVerified);
+          if (unverifiedUsers.length === 0) {
+            toast.success('All users are already verified!');
+            return;
+          }
+          
+          if (confirm(`Send verification emails to ${unverifiedUsers.length} unverified users?`)) {
+            for (const user of unverifiedUsers) {
+              await verifyUser(user.id);
+              await new Promise(resolve => setTimeout(resolve, 500)); // Delay between emails
+            }
+            toast.success(`Verification emails sent to ${unverifiedUsers.length} users!`);
+          }
+        }}
+        className="p-4 border border-color rounded-xl hover:border-blue-500 transition-colors flex items-center justify-between"
+      >
+        <div>
+          <p className="font-medium text-primary">Send to All Unverified</p>
+          <p className="text-sm text-secondary">Email all pending users</p>
+        </div>
+        <EnvelopeIcon className="h-5 w-5 text-blue-500" />
+      </button>
+      
+      {/* Mark all as verified */}
+      <button
+        onClick={async () => {
+          const unverifiedUsers = users.filter(u => !u.isVerified);
+          if (unverifiedUsers.length === 0) {
+            toast.success('All users are already verified!');
+            return;
+          }
+          
+          if (confirm(`Mark ${unverifiedUsers.length} users as verified without email?`)) {
+            // This would require the backend endpoint from Method 3
+           toast('This feature requires backend implementation', {
+  icon: 'ℹ️',
+  duration: 4000
+});
+          }
+        }}
+        className="p-4 border border-color rounded-xl hover:border-green-500 transition-colors flex items-center justify-between"
+      >
+        <div>
+          <p className="font-medium text-primary">Verify All Instantly</p>
+          <p className="text-sm text-secondary">Mark all as verified</p>
+        </div>
+        <CheckCircleIcon className="h-5 w-5 text-green-500" />
+      </button>
+    </div>
+  </div>
+)}
 
             {/* Delete User (Super Admin only, can't delete self) */}
             {isUserSuperAdmin() && !isCurrentUser && (
