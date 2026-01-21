@@ -712,7 +712,7 @@ const markUserAsVerified = async (userId: string) => {
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-color">
           {/* Modal Header */}
-          <div className={`px-6 py-4 border-b border-color flex justify-between items-center bg-gradient-to-r ${headerGradient} text-white`}>
+          <div className={`px-6 py-4 border-b border-color flex justify-between items-center bg-linear-to-r ${headerGradient} text-white`}>
             <div className="flex items-center">
               <div className="p-2 bg-white/20 rounded-lg mr-3">
                 {isAdmin ? (
@@ -851,7 +851,7 @@ const markUserAsVerified = async (userId: string) => {
                       onClick={() => setFormData({...formData, role})}
                       className={`p-4 rounded-xl border transition-all ${
                         formData.role === role
-                          ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white border-green-600 shadow-lg'
+                          ? 'bg-linear-to-r from-green-500 to-emerald-600 text-white border-green-600 shadow-lg'
                           : 'border-color text-secondary hover:bg-hover hover:border-green-500/50'
                       }`}
                     >
@@ -877,7 +877,7 @@ const markUserAsVerified = async (userId: string) => {
             {/* Permissions Info Box */}
             <div className={`${isAdmin ? 'bg-green-500/10 border-green-500/20' : 'bg-blue-500/10 border-blue-500/20'} rounded-xl p-4`}>
               <div className="flex items-start">
-                <ShieldCheckIcon className={`h-5 w-5 mr-2 mt-0.5 flex-shrink-0 ${isAdmin ? 'text-green-500' : 'text-blue-500'}`} />
+                <ShieldCheckIcon className={`h-5 w-5 mr-2 mt-0.5 shrink-0 ${isAdmin ? 'text-green-500' : 'text-blue-500'}`} />
                 <div>
                   <p className="text-sm font-medium text-primary mb-1">
                     {isAdmin ? 'Admin Permissions' : 'User Permissions'}
@@ -947,7 +947,7 @@ const markUserAsVerified = async (userId: string) => {
             </button>
             <button
               onClick={() => handleModalSubmit(isAdmin)}
-              className={`px-6 py-2.5 bg-gradient-to-r ${buttonGradient} text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center shadow-lg hover:shadow-xl`}
+              className={`px-6 py-2.5 bg-linear-to-r ${buttonGradient} text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center shadow-lg hover:shadow-xl`}
             >
               <SparklesIcon className="h-4 w-4 mr-2" />
               {buttonText}
@@ -1065,7 +1065,7 @@ const markUserAsVerified = async (userId: string) => {
               {activeTab === 'profile' && (
                 <section className="bg-card border border-color rounded-2xl p-8">
                   <div className="flex items-center space-x-6 mb-8">
-                    <div className="h-15 w-15 rounded-2xl bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-3xl font-bold text-white shadow-xl">
+                    <div className="h-15 w-15 rounded-2xl bg-linear-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-3xl font-bold text-white shadow-xl">
                       {user?.name?.charAt(0) || 'A'}
                     </div>
                     <div>
@@ -1107,11 +1107,11 @@ const markUserAsVerified = async (userId: string) => {
                     {/* Create User Card */}
                     <div className="bg-card border border-color rounded-2xl p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden">
                       {/* Gradient background effect */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       
                       <div className="flex items-center justify-between mb-4 relative z-10">
                         <div className="flex items-center">
-                          <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl mr-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                          <div className="p-3 bg-linear-to-br from-blue-500 to-blue-600 rounded-xl mr-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
                             <UserPlusIcon className="h-6 w-6 text-white" />
                           </div>
                           <div>
@@ -1125,7 +1125,7 @@ const markUserAsVerified = async (userId: string) => {
                         </div>
                         <button 
                           onClick={openCreateUserModal}
-                          className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 flex items-center shadow-lg hover:shadow-xl transition-all duration-300 group/btn"
+                          className="p-3 bg-linear-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 flex items-center shadow-lg hover:shadow-xl transition-all duration-300 group/btn"
                           title="Create New User"
                         >
                           <PlusIcon className="h-5 w-5 group-hover/btn:rotate-90 transition-transform duration-300" />
@@ -1146,11 +1146,11 @@ const markUserAsVerified = async (userId: string) => {
                     {isUserSuperAdmin() && (
                       <div className="bg-card border border-color rounded-2xl p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden">
                         {/* Gradient background effect */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div className="absolute inset-0 bg-linear-to-br from-green-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         
                         <div className="flex items-center justify-between mb-4 relative z-10">
                           <div className="flex items-center">
-                            <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl mr-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                            <div className="p-3 bg-linear-to-br from-green-500 to-emerald-600 rounded-xl mr-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
                               <ShieldCheckIcon className="h-6 w-6 text-white" />
                             </div>
                             <div>
@@ -1164,7 +1164,7 @@ const markUserAsVerified = async (userId: string) => {
                           </div>
                           <button 
                             onClick={openCreateAdminModal}
-                            className="p-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 flex items-center shadow-lg hover:shadow-xl transition-all duration-300 group/btn"
+                            className="p-3 bg-linear-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 flex items-center shadow-lg hover:shadow-xl transition-all duration-300 group/btn"
                             title="Create New Admin"
                           >
                             <PlusIcon className="h-5 w-5 group-hover/btn:rotate-90 transition-transform duration-300" />
@@ -1287,7 +1287,7 @@ const markUserAsVerified = async (userId: string) => {
                   {/* Permissions Info */}
                   <div className="bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 p-4 rounded-xl">
                     <div className="flex items-start">
-                      <ShieldCheckIcon className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                      <ShieldCheckIcon className="h-5 w-5 mr-2 mt-0.5 shrink-0" />
                       <div>
                         <p className="font-medium">Admin Permissions Guide</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 text-sm">

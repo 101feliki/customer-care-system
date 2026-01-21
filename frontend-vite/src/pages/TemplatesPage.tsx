@@ -82,7 +82,7 @@ const TemplatesPage: React.FC = () => {
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
 
   // --- Recipients Section State ---
-  const [showRecipientsSection, setShowRecipientsSection] = useState(false);
+  //const [showRecipientsSection, setShowRecipientsSection] = useState(false);
   const [recipientsLoading, setRecipientsLoading] = useState(false);
   const [recipientStats, setRecipientStats] = useState({
     total: 0,
