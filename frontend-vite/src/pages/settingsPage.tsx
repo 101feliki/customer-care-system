@@ -17,7 +17,12 @@ import {
   PlusIcon,
   EyeIcon,
   EyeSlashIcon,
-  XMarkIcon
+  ExclamationCircleIcon,
+  XCircleIcon,
+  UserGroupIcon,
+  EnvelopeIcon,
+  XMarkIcon,
+  KeyIcon
 } from '@heroicons/react/24/outline';
 
 // Types
@@ -72,29 +77,29 @@ const adminService = {
     }
   },
 
- // In your Settings page, update the adminService.createUser method
-async createUser(data: { email: string; name: string; password: string; role: 'user' }) {
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch('/api/admin/users', { // Changed from '/api/users'
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    });
-    
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to create user');
+  async createUser(data: { email: string; name: string; password: string; role: 'user' }) {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create user');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
     }
-    return await response.json();
-  } catch (error) {
-    console.error('Error creating user:', error);
-    throw error;
-  }
-},
+  },
+
   async updateUserRole(userId: string, role: 'user' | 'admin' | 'superadmin') {
     try {
       const token = localStorage.getItem('token');
@@ -135,6 +140,7 @@ async createUser(data: { email: string; name: string; password: string; role: 'u
   },
 };
 
+// Enhanced Modal Component
 const CreateUserModal = ({ 
   isOpen, 
   onClose, 
@@ -197,96 +203,153 @@ const CreateUserModal = ({
 
   if (!isOpen) return null;
 
+  // Determine colors based on modal type
+  const modalColors = {
+    headerGradient: isAdminCreation 
+      ? 'from-green-600 to-emerald-800' 
+      : 'from-blue-600 to-blue-800',
+    buttonGradient: isAdminCreation
+      ? 'from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800'
+      : 'from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800',
+    focusRing: isAdminCreation ? 'focus:ring-green-500' : 'focus:ring-blue-500',
+    infoBox: isAdminCreation 
+      ? 'bg-green-500/10 border-green-500/20' 
+      : 'bg-blue-500/10 border-blue-500/20',
+    iconColor: isAdminCreation ? 'text-green-500' : 'text-blue-500'
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-card border border-color rounded-2xl p-6 w-full max-w-md">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-bold text-primary flex items-center">
-            <UserPlusIcon className="h-5 w-5 mr-2" />
-            {isAdminCreation ? 'Create New Admin' : 'Create New User'}
-          </h3>
-          <button
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-color">
+        {/* Modal Header */}
+        <div className={`px-6 py-4 border-b border-color flex justify-between items-center bg-gradient-to-r ${modalColors.headerGradient} text-white`}>
+          <div className="flex items-center">
+            <div className="p-2 bg-white/20 rounded-lg mr-3">
+              {isAdminCreation ? (
+                <ShieldCheckIcon className="h-5 w-5" />
+              ) : (
+                <UserPlusIcon className="h-5 w-5" />
+              )}
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">
+                {isAdminCreation ? 'Create Administrator' : 'Create New User'}
+              </h2>
+              <p className="text-blue-100 text-sm">
+                {isAdminCreation ? 'Add an elevated access account' : 'Add a regular user account'}
+              </p>
+            </div>
+          </div>
+          <button 
             onClick={onClose}
-            className="p-1 hover:bg-hover rounded-lg transition-colors"
+            className="p-2 hover:bg-white/20 rounded-full transition-colors"
           >
-            <XMarkIcon className="h-5 w-5 text-secondary" />
+            <XMarkIcon className="h-6 w-6" />
           </button>
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-secondary mb-2">
-              Email Address *
-            </label>
-            <input
-              type="email"
-              required
-              value={formData.email}
-              onChange={(e) => {
-                setFormData({...formData, email: e.target.value});
-                if (errors.email) setErrors({...errors, email: ''});
-              }}
-              className={`w-full bg-primary border ${
-                errors.email 
-                  ? 'border-red-500' 
-                  : 'border-color'
-              } rounded-xl p-3 text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-              placeholder="user@example.com"
-            />
-            {errors.email && (
-              <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-secondary mb-2">
-              Full Name *
-            </label>
-            <input
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) => {
-                setFormData({...formData, name: e.target.value});
-                if (errors.name) setErrors({...errors, name: ''});
-              }}
-              className={`w-full bg-primary border ${
-                errors.name 
-                  ? 'border-red-500' 
-                  : 'border-color'
-              } rounded-xl p-3 text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-              placeholder="John Doe"
-            />
-            {errors.name && (
-              <p className="text-red-500 text-xs mt-1">{errors.name}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-secondary mb-2">
-              Password *
+        
+        {/* Modal Content */}
+        <div className="p-6 space-y-6 overflow-y-auto">
+          {/* Email Field */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-primary">
+              <span className="flex items-center">
+                Email Address
+                <span className="ml-1 text-red-500">*</span>
+              </span>
             </label>
             <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <EnvelopeIcon className="h-5 w-5 text-secondary" />
+              </div>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => {
+                  setFormData({...formData, email: e.target.value});
+                  if (errors.email) setErrors({...errors, email: ''});
+                }}
+                placeholder={isAdminCreation ? "admin@example.com" : "user@example.com"}
+                className={`w-full pl-10 pr-4 py-3 rounded-xl border ${
+                  errors.email 
+                    ? 'border-red-500 focus:ring-red-500' 
+                    : `border-color ${modalColors.focusRing}`
+                } bg-primary text-primary focus:ring-2 focus:border-transparent transition-colors`}
+              />
+            </div>
+            {errors.email && (
+              <p className="text-red-500 text-xs flex items-center mt-1">
+                <ExclamationCircleIcon className="h-3 w-3 mr-1" />
+                {errors.email}
+              </p>
+            )}
+          </div>
+          
+          {/* Name Field */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-primary">
+              <span className="flex items-center">
+                Full Name
+                <span className="ml-1 text-red-500">*</span>
+              </span>
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <UserIcon className="h-5 w-5 text-secondary" />
+              </div>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => {
+                  setFormData({...formData, name: e.target.value});
+                  if (errors.name) setErrors({...errors, name: ''});
+                }}
+                placeholder={isAdminCreation ? "Admin User" : "John Doe"}
+                className={`w-full pl-10 pr-4 py-3 rounded-xl border ${
+                  errors.name 
+                    ? 'border-red-500 focus:ring-red-500' 
+                    : `border-color ${modalColors.focusRing}`
+                } bg-primary text-primary focus:ring-2 focus:border-transparent transition-colors`}
+              />
+            </div>
+            {errors.name && (
+              <p className="text-red-500 text-xs flex items-center mt-1">
+                <ExclamationCircleIcon className="h-3 w-3 mr-1" />
+                {errors.name}
+              </p>
+            )}
+          </div>
+          
+          {/* Password Field */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-primary">
+              <span className="flex items-center">
+                Password
+                <span className="ml-1 text-red-500">*</span>
+              </span>
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <KeyIcon className="h-5 w-5 text-secondary" />
+              </div>
               <input
                 type={showPassword ? "text" : "password"}
-                required
                 value={formData.password}
                 onChange={(e) => {
                   setFormData({...formData, password: e.target.value});
                   if (errors.password) setErrors({...errors, password: ''});
                 }}
-                className={`w-full bg-primary border ${
-                  errors.password 
-                    ? 'border-red-500' 
-                    : 'border-color'
-                } rounded-xl p-3 text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10`}
                 placeholder="••••••••"
-                minLength={8}
+                className={`w-full pl-10 pr-12 py-3 rounded-xl border ${
+                  errors.password 
+                    ? 'border-red-500 focus:ring-red-500' 
+                    : `border-color ${modalColors.focusRing}`
+                } bg-primary text-primary focus:ring-2 focus:border-transparent transition-colors`}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-secondary hover:text-primary"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-secondary hover:text-primary transition-colors"
               >
                 {showPassword ? (
                   <EyeSlashIcon className="h-5 w-5" />
@@ -296,56 +359,166 @@ const CreateUserModal = ({
               </button>
             </div>
             {errors.password && (
-              <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+              <p className="text-red-500 text-xs flex items-center mt-1">
+                <ExclamationCircleIcon className="h-3 w-3 mr-1" />
+                {errors.password}
+              </p>
             )}
-            <p className="text-xs text-secondary mt-1">Minimum 8 characters</p>
+            <div className="flex items-center mt-2">
+              <div className="h-1 flex-1 bg-secondary/20 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full rounded-full transition-all duration-300 ${
+                    formData.password.length >= 12 ? 'bg-green-500' :
+                    formData.password.length >= 8 ? 'bg-yellow-500' :
+                    formData.password.length > 0 ? 'bg-red-500' : ''
+                  }`}
+                  style={{ width: `${Math.min((formData.password.length / 12) * 100, 100)}%` }}
+                ></div>
+              </div>
+              <span className="text-xs text-secondary ml-3">
+                {formData.password.length >= 12 ? 'Strong' :
+                 formData.password.length >= 8 ? 'Good' :
+                 formData.password.length > 0 ? 'Weak' : ''}
+              </span>
+            </div>
+            <p className="text-xs text-secondary mt-1">
+              Minimum 8 characters with letters and numbers
+            </p>
           </div>
-
+          
+          {/* Role Selection (Admin creation only) */}
           {isAdminCreation && (
-            <div>
-              <label className="block text-sm font-medium text-secondary mb-2">
-                Role *
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-primary">
+                <span className="flex items-center">
+                  Admin Role
+                  <span className="ml-1 text-red-500">*</span>
+                </span>
               </label>
-              <div className="flex space-x-2">
+              <div className="grid grid-cols-2 gap-3">
                 {(['admin', 'superadmin'] as const).map((role) => (
                   <button
                     key={role}
                     type="button"
                     onClick={() => setFormData({...formData, role})}
-                    className={`flex-1 py-2 px-4 rounded-lg border transition-all ${
+                    className={`p-4 rounded-xl border transition-all ${
                       formData.role === role
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'border-color text-secondary hover:bg-hover'
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white border-green-600 shadow-lg'
+                        : 'border-color text-secondary hover:bg-hover hover:border-green-500/50'
                     }`}
                   >
-                    {role === 'superadmin' ? 'Super Admin' : 'Admin'}
+                    <div className="flex flex-col items-center">
+                      {role === 'superadmin' ? (
+                        <ShieldCheckIcon className="h-6 w-6 mb-2" />
+                      ) : (
+                        <UserGroupIcon className="h-6 w-6 mb-2" />
+                      )}
+                      <span className="font-medium">
+                        {role === 'superadmin' ? 'Super Admin' : 'Admin'}
+                      </span>
+                      <span className="text-xs opacity-75 mt-1">
+                        {role === 'superadmin' ? 'Full system access' : 'Limited admin access'}
+                      </span>
+                    </div>
                   </button>
                 ))}
               </div>
             </div>
           )}
-
-          <div className="flex space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-3 border border-color text-primary rounded-xl font-medium hover:bg-hover transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center transition-colors"
-            >
-              {loading ? (
-                <div className="animate-spin h-5 w-5 border-2 border-white/30 border-t-white rounded-full" />
-              ) : (
-                `Create ${isAdminCreation ? 'Admin' : 'User'}`
-              )}
-            </button>
+          
+          {/* Permissions Info Box */}
+          <div className={`${modalColors.infoBox} rounded-xl p-4`}>
+            <div className="flex items-start">
+              <ShieldCheckIcon className={`h-5 w-5 mr-2 mt-0.5 flex-shrink-0 ${modalColors.iconColor}`} />
+              <div>
+                <p className="text-sm font-medium text-primary mb-1">
+                  {isAdminCreation ? 'Admin Permissions' : 'User Permissions'}
+                </p>
+                <ul className="text-xs text-secondary space-y-1">
+                  {isAdminCreation ? (
+                    <>
+                      <li className="flex items-center">
+                        <CheckCircleIcon className="h-3 w-3 text-green-500 mr-2" />
+                        Full dashboard access
+                      </li>
+                      <li className="flex items-center">
+                        <CheckCircleIcon className="h-3 w-3 text-green-500 mr-2" />
+                        User management
+                      </li>
+                      {formData.role === 'superadmin' && (
+                        <>
+                          <li className="flex items-center">
+                            <CheckCircleIcon className="h-3 w-3 text-green-500 mr-2" />
+                            Create other admins
+                          </li>
+                          <li className="flex items-center">
+                            <CheckCircleIcon className="h-3 w-3 text-green-500 mr-2" />
+                            Full system control
+                          </li>
+                        </>
+                      )}
+                      <li className="flex items-center">
+                        <CheckCircleIcon className="h-3 w-3 text-green-500 mr-2" />
+                        Auto-verified account
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li className="flex items-center">
+                        <CheckCircleIcon className="h-3 w-3 text-green-500 mr-2" />
+                        Basic dashboard access
+                      </li>
+                      <li className="flex items-center">
+                        <CheckCircleIcon className="h-3 w-3 text-green-500 mr-2" />
+                        View notifications
+                      </li>
+                      <li className="flex items-center">
+                        <XCircleIcon className="h-3 w-3 text-red-500 mr-2" />
+                        No admin privileges
+                      </li>
+                      <li className="flex items-center">
+                        <EnvelopeIcon className="h-3 w-3 text-blue-500 mr-2" />
+                        Email verification required
+                      </li>
+                    </>
+                  )}
+                </ul>
+              </div>
+            </div>
           </div>
-        </form>
+        </div>
+        
+        {/* Modal Footer */}
+        <div className="px-6 py-4 border-t border-color flex justify-end space-x-3 bg-hover/30">
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 border border-color text-primary rounded-xl font-medium hover:bg-hover transition-colors flex items-center"
+          >
+            <XMarkIcon className="h-4 w-4 mr-2" />
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className={`px-6 py-2.5 bg-gradient-to-r ${modalColors.buttonGradient} text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center shadow-lg hover:shadow-xl`}
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full mr-2" />
+                Creating...
+              </>
+            ) : (
+              <>
+                {isAdminCreation ? (
+                  <ShieldCheckIcon className="h-4 w-4 mr-2" />
+                ) : (
+                  <UserPlusIcon className="h-4 w-4 mr-2" />
+                )}
+                {isAdminCreation ? 'Create Admin' : 'Create User'}
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -412,7 +585,7 @@ const SettingsPage: React.FC = () => {
   const handleCreateUser = async (data: any) => {
     try {
       await adminService.createUser(data);
-      fetchUsers(); // Refresh the user list
+      fetchUsers();
     } catch (error: any) {
       throw error;
     }
@@ -421,7 +594,7 @@ const SettingsPage: React.FC = () => {
   const handleCreateAdmin = async (data: any) => {
     try {
       await adminService.createAdmin(data);
-      fetchUsers(); // Refresh the user list
+      fetchUsers();
     } catch (error: any) {
       throw error;
     }
@@ -470,12 +643,12 @@ const SettingsPage: React.FC = () => {
   };
 
   // Filter users based on search and role filter
-  const filteredUsers = users.filter(user => {
+  const filteredUsers = users.filter(userItem => {
     const matchesSearch = searchTerm === '' || 
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      userItem.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      userItem.email.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+    const matchesRole = roleFilter === 'all' || userItem.role === roleFilter;
     
     return matchesSearch && matchesRole;
   });
@@ -631,64 +804,82 @@ const SettingsPage: React.FC = () => {
                   </div>
 
                   {/* Action Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Create User Card */}
-                    <div className="bg-card border border-color rounded-2xl p-6 hover:shadow-lg transition-shadow">
-                      <div className="flex items-center justify-between mb-4">
+                    <div className="bg-card border border-color rounded-2xl p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden">
+                      {/* Gradient background effect */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      
+                      <div className="flex items-center justify-between mb-4 relative z-10">
                         <div className="flex items-center">
-                          <div className="p-2 bg-blue-500/10 rounded-lg mr-3">
-                            <UserPlusIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                          <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl mr-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                            <UserPlusIcon className="h-6 w-6 text-white" />
                           </div>
                           <div>
-                            <h4 className="font-bold text-primary">
-                              Create User
+                            <h4 className="font-bold text-primary text-lg">
+                              Create New User
                             </h4>
-                            <p className="text-sm text-secondary">
-                              Add new regular users
+                            <p className="text-sm text-secondary mt-1">
+                              Add regular user accounts
                             </p>
                           </div>
                         </div>
                         <button 
                           onClick={() => setShowCreateUserModal(true)}
-                          className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center transition-colors"
+                          className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 flex items-center shadow-lg hover:shadow-xl transition-all duration-300 group/btn"
                           title="Create New User"
                         >
-                          <PlusIcon className="h-5 w-5" />
+                          <PlusIcon className="h-5 w-5 group-hover/btn:rotate-90 transition-transform duration-300" />
                         </button>
                       </div>
-                      <p className="text-secondary text-sm">
-                        Create new user accounts with basic access permissions.
-                      </p>
+                      <div className="relative z-10">
+                        <p className="text-secondary text-sm mb-3">
+                          Create user accounts with basic access permissions and email verification.
+                        </p>
+                        <div className="flex items-center text-xs text-blue-500 font-medium">
+                          <CheckCircleIcon className="h-4 w-4 mr-1" />
+                          Available to all administrators
+                        </div>
+                      </div>
                     </div>
 
                     {/* Create Admin Card (Super Admin Only) */}
                     {user?.role === 'superadmin' && (
-                      <div className="bg-card border border-color rounded-2xl p-6 hover:shadow-lg transition-shadow">
-                        <div className="flex items-center justify-between mb-4">
+                      <div className="bg-card border border-color rounded-2xl p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden">
+                        {/* Gradient background effect */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        
+                        <div className="flex items-center justify-between mb-4 relative z-10">
                           <div className="flex items-center">
-                            <div className="p-2 bg-green-500/10 rounded-lg mr-3">
-                              <ShieldCheckIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
+                            <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl mr-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                              <ShieldCheckIcon className="h-6 w-6 text-white" />
                             </div>
                             <div>
-                              <h4 className="font-bold text-primary">
-                                Create Admin
+                              <h4 className="font-bold text-primary text-lg">
+                                Create Administrator
                               </h4>
-                              <p className="text-sm text-secondary">
-                                Add new administrators
+                              <p className="text-sm text-secondary mt-1">
+                                Add elevated access accounts
                               </p>
                             </div>
                           </div>
                           <button 
                             onClick={() => setShowCreateAdminModal(true)}
-                            className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center transition-colors"
+                            className="p-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 flex items-center shadow-lg hover:shadow-xl transition-all duration-300 group/btn"
                             title="Create New Admin"
                           >
-                            <PlusIcon className="h-5 w-5" />
+                            <PlusIcon className="h-5 w-5 group-hover/btn:rotate-90 transition-transform duration-300" />
                           </button>
                         </div>
-                        <p className="text-secondary text-sm">
-                          Create new admin or super admin accounts with elevated permissions.
-                        </p>
+                        <div className="relative z-10">
+                          <p className="text-secondary text-sm mb-3">
+                            Create admin or super admin accounts with full system access.
+                          </p>
+                          <div className="flex items-center text-xs text-green-500 font-medium">
+                            <ShieldCheckIcon className="h-4 w-4 mr-1" />
+                            Super Admin access required
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -884,7 +1075,7 @@ const SettingsPage: React.FC = () => {
         </main>
       </div>
 
-      {/* Modals */}
+      {/* Enhanced Modals */}
       <CreateUserModal
         isOpen={showCreateUserModal}
         onClose={() => setShowCreateUserModal(false)}
