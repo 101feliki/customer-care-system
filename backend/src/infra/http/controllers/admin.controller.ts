@@ -19,74 +19,73 @@ import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/roles.decorator';
 import { 
   CreateAdminDto, 
+  CreateUserDto, 
   UpdateUserRoleDto, 
   UserQueryDto 
 } from '../dtos/admin.dto';
 
+
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AdminController {
-  constructor(private adminService: AdminService) {}
+  constructor(private readonly adminService: AdminService) {}
 
+  // Create regular user (available to all admins)
+  @Post('users')
+  @Roles('admin', 'superadmin')
+  async createUser(@Body() createUserDto: CreateUserDto) {
+    return this.adminService.createUser(createUserDto);
+  }
+
+  // Create admin (superadmin only)
   @Post('create-admin')
   @Roles('superadmin')
-  @HttpCode(HttpStatus.CREATED)
-  async createAdmin(@Body() createAdminDto: CreateAdminDto, @Request() req) {
-    console.log(`🛡️ Superadmin ${req.user.email} creating new admin: ${createAdminDto.email}`);
+  async createAdmin(@Body() createAdminDto: CreateAdminDto) {
     return this.adminService.createAdmin(createAdminDto);
   }
 
   @Get('users')
   @Roles('admin', 'superadmin')
-  async getAllUsers(@Query() query: UserQueryDto, @Request() req) {
-    console.log(`📊 Admin ${req.user.email} viewing users list`);
+  async getUsers(@Query() query: UserQueryDto) {
     return this.adminService.getAllUsers(query);
   }
 
   @Get('users/:id')
   @Roles('admin', 'superadmin')
-  async getUserById(@Param('id') id: string, @Request() req) {
-    console.log(`🔍 Admin ${req.user.email} viewing user: ${id}`);
+  async getUser(@Param('id') id: string) {
     return this.adminService.getUserById(id);
   }
 
   @Put('users/:id/role')
   @Roles('superadmin')
   async updateUserRole(
-    @Param('id') id: string, 
-    @Body() updateUserRoleDto: UpdateUserRoleDto,
-    @Request() req
+    @Param('id') id: string,
+    @Body() updateRoleDto: UpdateUserRoleDto
   ) {
-    console.log(`⚡ Superadmin ${req.user.email} updating role for user: ${id}`);
-    return this.adminService.updateUserRole(id, updateUserRoleDto.role);
+    return this.adminService.updateUserRole(id, updateRoleDto.role);
   }
 
   @Delete('users/:id')
   @Roles('superadmin')
-  @HttpCode(HttpStatus.OK)
-  async deleteUser(@Param('id') id: string, @Request() req) {
-    console.log(`🗑️ Superadmin ${req.user.email} deleting user: ${id}`);
+  async deleteUser(@Param('id') id: string) {
     return this.adminService.deleteUser(id);
   }
 
   @Get('stats')
   @Roles('admin', 'superadmin')
-  async getAdminStats(@Request() req) {
-    console.log(`📈 Admin ${req.user.email} viewing admin stats`);
+  async getStats() {
     return this.adminService.getAdminStats();
   }
 
   @Post('users/:id/send-verification')
   @Roles('admin', 'superadmin')
-  async resendVerification(@Param('id') id: string, @Request() req) {
-    console.log(`📧 Admin ${req.user.email} resending verification to user: ${id}`);
+  async resendVerification(@Param('id') id: string) {
     return this.adminService.resendVerificationEmail(id);
   }
 
   @Post('users/:id/reset-password')
   @Roles('admin', 'superadmin')
-  async adminResetPassword(@Param('id') id: string, @Request() req) {
-    console.log(`🔐 Admin ${req.user.email} resetting password for user: ${id}`);
+  async resetPassword(@Param('id') id: string) {
     return this.adminService.adminResetPassword(id);
   }
 }
