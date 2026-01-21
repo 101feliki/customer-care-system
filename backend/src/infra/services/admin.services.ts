@@ -1,7 +1,7 @@
-// src/infra/admin/admin.service.ts
-import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
+// src/infra/services/admin.services.ts
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma/prisma.service';
-import { CreateAdminDto, UpdateUserRoleDto, UserQueryDto } from '../http/dtos/admin.dto';
+import { CreateAdminDto, UpdateUserRoleDto, UserQueryDto, CreateUserDto } from '../http/dtos/admin.dto';
 import { User } from '../../app/entities/user.entity';
 import { PrismaUserMapper } from '../database/prisma/mappers/prisma-user-mapper';
 import * as bcrypt from 'bcrypt';
@@ -11,6 +11,59 @@ export class AdminService {
   constructor(
     private prisma: PrismaService,
   ) {}
+
+  async createUser(createUserDto: CreateUserDto): Promise<any> {
+    // Check if user already exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: createUserDto.email }
+    });
+
+    if (existingUser) {
+      throw new BadRequestException('User with this email already exists');
+    }
+
+    // Create new user entity
+    const newUser = new User({
+      email: createUserDto.email,
+      password: createUserDto.password,
+      name: createUserDto.name,
+      role: 'user', // Regular users get 'user' role
+      isVerified: false, // Regular users need to verify their email
+    });
+
+    // Hash password
+    await newUser.hashPassword();
+
+    // Generate verification token
+    newUser.generateVerificationToken();
+
+    // Convert to Prisma format and save
+    const prismaData = PrismaUserMapper.toPrisma(newUser);
+    
+    console.log('Creating user with data:', { ...prismaData, password: '[HIDDEN]' });
+    
+    try {
+      const savedUser = await this.prisma.user.create({
+        data: prismaData,
+      });
+
+      console.log('User created successfully:', savedUser.id);
+
+      // Convert back to domain entity
+      const domainUser = PrismaUserMapper.toDomain(savedUser);
+
+      // Remove password from response
+      const { password, ...userWithoutPassword } = domainUser;
+
+      return {
+        message: 'User created successfully.',
+        user: userWithoutPassword,
+      };
+    } catch (error: any) { // Type assertion for error
+      console.error('Database error creating user:', error);
+      throw new BadRequestException(`Failed to create user: ${error.message}`);
+    }
+  }
 
   async createAdmin(createAdminDto: CreateAdminDto): Promise<any> {
     // Check if user already exists
@@ -37,20 +90,29 @@ export class AdminService {
     // Convert to Prisma format and save
     const prismaData = PrismaUserMapper.toPrisma(newUser);
     
-    const savedUser = await this.prisma.user.create({
-      data: prismaData,
-    });
+    console.log('Creating admin with data:', { ...prismaData, password: '[HIDDEN]' });
+    
+    try {
+      const savedUser = await this.prisma.user.create({
+        data: prismaData,
+      });
 
-    // Convert back to domain entity
-    const domainUser = PrismaUserMapper.toDomain(savedUser);
+      console.log('Admin created successfully:', savedUser.id);
 
-    // Remove password from response
-    const { password, ...userWithoutPassword } = domainUser;
+      // Convert back to domain entity
+      const domainUser = PrismaUserMapper.toDomain(savedUser);
 
-    return {
-      message: 'Admin created successfully',
-      user: userWithoutPassword,
-    };
+      // Remove password from response
+      const { password, ...userWithoutPassword } = domainUser;
+
+      return {
+        message: 'Admin created successfully',
+        user: userWithoutPassword,
+      };
+    } catch (error: any) { // Type assertion for error
+      console.error('Database error creating admin:', error);
+      throw new BadRequestException(`Failed to create admin: ${error.message}`);
+    }
   }
 
   async getAllUsers(query: UserQueryDto): Promise<any> {

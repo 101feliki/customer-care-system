@@ -3,6 +3,7 @@ import AppRouter from './AppRouter';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext'; // Ensure ThemeProvider is also here
 import './index.css';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   useEffect(() => {
@@ -23,6 +24,7 @@ function App() {
           <AppRouter />
         </ThemeProvider>
       </AuthProvider>
+      <Toaster position="top-right" reverseOrder={false} />
     </div>
   );
 }

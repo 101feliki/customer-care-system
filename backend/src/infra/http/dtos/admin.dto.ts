@@ -1,32 +1,34 @@
-// dtos/admin.dto.ts
-import { IsEmail, IsString, IsNotEmpty, IsOptional, IsIn } from 'class-validator';
+// src/infra/http/dtos/admin.dto.ts
+import { 
+  IsEmail, 
+  IsString, 
+  IsEnum, 
+  IsOptional, 
+  MinLength, 
+  IsBooleanString 
+} from 'class-validator';
 
-export class CreateAdminDto {
+export class CreateUserDto {
   @IsEmail()
-  @IsNotEmpty()
   email: string;
 
   @IsString()
-  @IsNotEmpty()
-  password: string;
-
-  @IsString()
-  @IsNotEmpty()
+  @MinLength(2)
   name: string;
 
+  @IsString()
+  @MinLength(8)
+  password: string;
+}
+
+export class CreateAdminDto extends CreateUserDto {
   @IsOptional()
-  @IsIn(['admin', 'superadmin'])
+  @IsEnum(['admin', 'superadmin'])
   role?: 'admin' | 'superadmin';
 }
 
 export class UpdateUserRoleDto {
-  @IsString()
-  @IsNotEmpty()
-  userId: string;
-
-  @IsString()
-  @IsIn(['user', 'admin', 'superadmin'])
-  @IsNotEmpty()
+  @IsEnum(['user', 'admin', 'superadmin'])
   role: 'user' | 'admin' | 'superadmin';
 }
 
@@ -36,10 +38,10 @@ export class UserQueryDto {
   search?: string;
 
   @IsOptional()
-  @IsString()
+  @IsEnum(['user', 'admin', 'superadmin'])
   role?: string;
 
   @IsOptional()
-  @IsString()
+  @IsBooleanString()
   isVerified?: string;
 }
