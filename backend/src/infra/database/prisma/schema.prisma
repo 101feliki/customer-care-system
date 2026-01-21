@@ -46,6 +46,12 @@ model EmailTemplate {
   updatedAt DateTime              @updatedAt
   type      String                @default("EMAIL")
   bulkJobs  BulkNotificationJob[]
+}  
+
+enum UserRole {
+  USER
+  ADMIN
+  SUPERADMIN 
 }
 
 model User {
@@ -53,7 +59,7 @@ model User {
   email                String                @unique
   password             String
   name                 String
-  role                 String                @default("user")
+  role                 UserRole               @default(USER)
   isVerified           Boolean               @default(false)
   verificationToken    String?
   resetPasswordToken   String?

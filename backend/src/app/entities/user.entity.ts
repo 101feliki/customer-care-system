@@ -1,12 +1,15 @@
 // src/app/entities/user.entity.ts
 import * as bcrypt from 'bcrypt';
 
+// Create a type that accepts both uppercase and lowercase
+type UserRole = 'USER' | 'ADMIN' | 'SUPERADMIN' | 'user' | 'admin' | 'superadmin';
+
 export class User {
   id: string;
   email: string;
   password: string;
   name: string;
-  role: 'user' | 'admin' | 'superadmin' = 'user';
+  role: UserRole = 'USER'; // Accept both cases
   isVerified: boolean = false;
   verificationToken?: string;
   resetPasswordToken?: string;
@@ -17,6 +20,10 @@ export class User {
   constructor(props?: Partial<User>) {
     if (props) {
       Object.assign(this, props);
+      // Ensure role is uppercase for consistency
+      if (this.role) {
+        this.role = this.role.toUpperCase() as 'USER' | 'ADMIN' | 'SUPERADMIN';
+      }
     }
   }
 
@@ -56,23 +63,35 @@ export class User {
     this.resetPasswordExpires = undefined;
   }
 
+  // Helper methods
   isAdmin(): boolean {
-    return this.role === 'admin' || this.role === 'superadmin';
+    const roleUpper = this.role.toUpperCase();
+    return roleUpper === 'ADMIN' || roleUpper === 'SUPERADMIN';
   }
 
   isSuperAdmin(): boolean {
-    return this.role === 'superadmin';
+    return this.role.toUpperCase() === 'SUPERADMIN';
   }
 
   promoteToAdmin(): void {
-    this.role = 'admin';
+    this.role = 'ADMIN';
   }
 
   promoteToSuperAdmin(): void {
-    this.role = 'superadmin';
+    this.role = 'SUPERADMIN';
   }
 
   demoteToUser(): void {
-    this.role = 'user';
+    this.role = 'USER';
+  }
+
+  // Get uppercase role for Prisma
+  getRoleUppercase(): 'USER' | 'ADMIN' | 'SUPERADMIN' {
+    return this.role.toUpperCase() as 'USER' | 'ADMIN' | 'SUPERADMIN';
+  }
+
+  // Get lowercase role for frontend
+  getRoleLowerCase(): 'user' | 'admin' | 'superadmin' {
+    return this.role.toLowerCase() as 'user' | 'admin' | 'superadmin';
   }
 }
