@@ -22,13 +22,13 @@ export class AdminService {
       throw new BadRequestException('User with this email already exists');
     }
 
-    // Create new user entity
+    // Create new user entity - Note: User entity constructor will convert to uppercase
     const newUser = new User({
       email: createUserDto.email,
       password: createUserDto.password,
       name: createUserDto.name,
-      role: 'user', // Regular users get 'user' role
-      isVerified: false, // Regular users need to verify their email
+      role: 'user', // lowercase, will be converted to uppercase by User entity
+      isVerified: false,
     });
 
     // Hash password
@@ -40,7 +40,12 @@ export class AdminService {
     // Convert to Prisma format and save
     const prismaData = PrismaUserMapper.toPrisma(newUser);
     
-    console.log('Creating user with data:', { ...prismaData, password: '[HIDDEN]' });
+    console.log('Creating user with data:', { 
+      email: prismaData.email,
+      name: prismaData.name,
+      role: prismaData.role,
+      isVerified: prismaData.isVerified 
+    });
     
     try {
       const savedUser = await this.prisma.user.create({
@@ -59,8 +64,9 @@ export class AdminService {
         message: 'User created successfully.',
         user: userWithoutPassword,
       };
-    } catch (error: any) { // Type assertion for error
+    } catch (error: any) {
       console.error('Database error creating user:', error);
+      console.error('Error details:', error);
       throw new BadRequestException(`Failed to create user: ${error.message}`);
     }
   }
@@ -75,13 +81,13 @@ export class AdminService {
       throw new BadRequestException('User with this email already exists');
     }
 
-    // Create new user entity
+    // Create new user entity - User constructor will handle uppercase conversion
     const newUser = new User({
       email: createAdminDto.email,
       password: createAdminDto.password,
       name: createAdminDto.name,
-      role: createAdminDto.role || 'admin',
-      isVerified: true, // Admins are auto-verified
+      role: createAdminDto.role || 'admin', // lowercase, will be converted
+      isVerified: true,
     });
 
     // Hash password
@@ -90,7 +96,12 @@ export class AdminService {
     // Convert to Prisma format and save
     const prismaData = PrismaUserMapper.toPrisma(newUser);
     
-    console.log('Creating admin with data:', { ...prismaData, password: '[HIDDEN]' });
+    console.log('Creating admin with data:', { 
+      email: prismaData.email,
+      name: prismaData.name,
+      role: prismaData.role,
+      isVerified: prismaData.isVerified 
+    });
     
     try {
       const savedUser = await this.prisma.user.create({
@@ -109,7 +120,7 @@ export class AdminService {
         message: 'Admin created successfully',
         user: userWithoutPassword,
       };
-    } catch (error: any) { // Type assertion for error
+    } catch (error: any) {
       console.error('Database error creating admin:', error);
       throw new BadRequestException(`Failed to create admin: ${error.message}`);
     }
@@ -128,12 +139,14 @@ export class AdminService {
     }
 
     if (role) {
-      where.role = role.toUpperCase();
+      // Uppercase for enum matching
+      where.role = role.toUpperCase() as 'USER' | 'ADMIN' | 'SUPERADMIN';
     }
 
     if (isVerified !== undefined) {
-      where.isVerified = isVerified === 'true';
-    }
+  // Query params are always strings, so we need to convert
+  where.isVerified = isVerified.toLowerCase() === 'true';
+}
 
     // Get users with Prisma
     const users = await this.prisma.user.findMany({
@@ -174,13 +187,13 @@ export class AdminService {
       throw new NotFoundException('User not found');
     }
 
-    // Convert role to uppercase for Prisma
-    const prismaRole = role.toUpperCase() as 'USER' | 'ADMIN' | 'SUPERADMIN';
+    // Convert to uppercase for enum
+    const uppercaseRole = role.toUpperCase() as 'USER' | 'ADMIN' | 'SUPERADMIN';
     
     // Update role in database
     const updatedUser = await this.prisma.user.update({
       where: { id },
-      data: { role: prismaRole },
+      data: { role: uppercaseRole },
     });
 
     // Convert to domain entity

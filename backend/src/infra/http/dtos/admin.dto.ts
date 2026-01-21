@@ -39,7 +39,7 @@ export class UserQueryDto {
 
   @IsOptional()
   @IsEnum(['user', 'admin', 'superadmin'])
-  role?: string;
+  role?: 'user' | 'admin' | 'superadmin';
 
   @IsOptional()
   @IsBooleanString()
