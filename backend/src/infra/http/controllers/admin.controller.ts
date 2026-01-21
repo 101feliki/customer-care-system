@@ -21,7 +21,7 @@ import {
   CreateAdminDto, 
   CreateUserDto, 
   UpdateUserRoleDto, 
-  UserQueryDto 
+  UserQueryDto,VerifyUserDto  
 } from '../dtos/admin.dto';
 
 
@@ -72,20 +72,29 @@ export class AdminController {
   }
 
   @Get('stats')
-  @Roles('admin', 'superadmin')
+  @Roles('ADMIN', 'SUPERADMIN')
   async getStats() {
     return this.adminService.getAdminStats();
   }
 
   @Post('users/:id/send-verification')
-  @Roles('admin', 'superadmin')
+  @Roles('ADMIN', 'SUPERADMIN')
   async resendVerification(@Param('id') id: string) {
     return this.adminService.resendVerificationEmail(id);
   }
 
   @Post('users/:id/reset-password')
-  @Roles('admin', 'superadmin')
+  @Roles('ADMIN', 'SUPERADMIN')
   async resetPassword(@Param('id') id: string) {
     return this.adminService.adminResetPassword(id);
   }
+
+  @Put('users/:id/verify')
+@Roles('SUPERADMIN')
+async verifyUser(
+  @Param('id') id: string,
+  @Body() verifyUserDto: VerifyUserDto
+) {
+  return this.adminService.verifyUser(id, verifyUserDto.isVerified);
+}
 }

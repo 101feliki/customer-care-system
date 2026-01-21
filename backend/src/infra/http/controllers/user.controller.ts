@@ -19,13 +19,13 @@ export class UserController {
   constructor(private readonly adminService: AdminService) {}
 
   @Post()
-  @Roles('admin', 'superadmin')
+ @Roles('ADMIN', 'SUPERADMIN')
   async createUser(@Body() createUserDto: CreateUserDto) {
     return this.adminService.createUser(createUserDto);
   }
 
   @Get()
-  @Roles('admin', 'superadmin')
+ @Roles('ADMIN', 'SUPERADMIN')
   async getUsers(@Query() query: any) {
     return this.adminService.getAllUsers(query);
   }

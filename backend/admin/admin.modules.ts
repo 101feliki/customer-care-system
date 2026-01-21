@@ -5,6 +5,7 @@ import { AdminService } from '../src/infra/services/admin.services';
 import { PrismaService } from '../src/infra/database/prisma/prisma.service';
 import { AuthModule } from '../src/infra/auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
+import { PrismaUserMapper } from '../src/infra/database/prisma/mappers/prisma-user-mapper';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { JwtModule } from '@nestjs/jwt';
   controllers: [AdminController],
   providers: [
     AdminService,
-    PrismaService, // Add PrismaService here
+    PrismaService, PrismaUserMapper,  
   ],
   exports: [AdminService],
 })

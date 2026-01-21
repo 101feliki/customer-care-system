@@ -1,5 +1,5 @@
 // src/infra/services/admin.services.ts
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException,Logger } from '@nestjs/common';
 import { PrismaService } from '../database/prisma/prisma.service';
 import { CreateAdminDto, UpdateUserRoleDto, UserQueryDto, CreateUserDto } from '../http/dtos/admin.dto';
 import { User } from '../../app/entities/user.entity';
@@ -8,10 +8,29 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
+  
   constructor(
     private prisma: PrismaService,
-  ) {}
+    private prismaUserMapper: PrismaUserMapper // Make sure this is injected
+  ) {} 
 
+    async verifyUserDirectly(userId: string, isVerified: boolean) {
+    try {
+      const user = await this.prisma.user.update({
+        where: { id: userId },
+        data: { 
+          isVerified,
+          verificationToken: isVerified ? null : undefined
+        },
+      });
+
+      return PrismaUserMapper.toDomain(user);
+    } catch (error) {
+      this.logger.error(`Failed to verify user ${userId}:`, error);
+      throw new Error('Failed to update user verification status');
+    }
+  }
   async createUser(createUserDto: CreateUserDto): Promise<any> {
     // Check if user already exists
     const existingUser = await this.prisma.user.findUnique({
@@ -205,6 +224,23 @@ export class AdminService {
       user: userWithoutPassword,
     };
   }
+
+  async verifyUser(userId: string, isVerified: boolean) {
+  try {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { 
+        isVerified,
+        verificationToken: isVerified ? null : undefined // Clear token if verifying
+      },
+    });
+
+    return PrismaUserMapper.toDomain(user);
+  } catch (error) {
+    this.logger.error(`Failed to verify user ${userId}:`, error);
+    throw new Error('Failed to update user verification status');
+  }
+}
 
   async deleteUser(id: string): Promise<any> {
     const user = await this.prisma.user.findUnique({ where: { id } });
