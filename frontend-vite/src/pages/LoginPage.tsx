@@ -351,7 +351,7 @@ const LoginPage: React.FC = () => {
         <div className="inline-flex items-center justify-center p-3 bg-blue-600 rounded-2xl shadow-xl shadow-blue-600/30 mb-6">
           <BellIcon className="h-7 w-7 text-white" />
         </div>
-        <h2 className="text-3xl font-extrabold text-primary dark:text-white">
+        <h2 className="text-3xl font-extrabold text-primary dark:text-black">
           {showResetPassword ? 'Reset Password' : showForgotPassword ? 'Forgot Password' : 'Welcome Back'}
         </h2>
         <p className="mt-2 text-sm text-secondary dark:text-gray-300 font-medium">
@@ -525,7 +525,7 @@ const LoginPage: React.FC = () => {
             
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
-                <label className="block text-sm font-semibold text-primary dark:text-white">Email Address</label>
+                <label className="block text-sm font-semibold text-primary dark:text-black">Email Address</label>
                 <div className="mt-1 relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <EnvelopeIcon className="h-5 w-5 text-gray-400" />
@@ -535,7 +535,7 @@ const LoginPage: React.FC = () => {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-600 outline-none transition-all"
+                    className="block w-full pl-10 pr-3 py-3 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-400 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-600 outline-none transition-all"
                     placeholder="admin@example.com"
                     autoComplete="email"
                   />
@@ -553,7 +553,7 @@ const LoginPage: React.FC = () => {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-600 outline-none transition-all"
+                    className="block w-full pl-10 pr-3 py-3 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-400 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-600 outline-none transition-all"
                     placeholder="••••••••"
                     autoComplete="current-password"
                   />
