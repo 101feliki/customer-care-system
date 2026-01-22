@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
@@ -11,113 +11,94 @@ interface EmailResult {
 
 @Injectable()
 export class EmailService {
+  private readonly logger = new Logger(EmailService.name);
   private transporter: nodemailer.Transporter;
 
-  constructor(private configService: ConfigService) {
-    // Get values from .env with fallbacks
-    const mailHost = this.configService.get<string>('MAIL_HOST', 'mail5016.site4now.net');
-    const mailPort = this.configService.get<number>('MAIL_PORT', 465);
-    const mailUser = this.configService.get<string>('MAIL_USER', 'customerservice@birdviewinsurance.com');
-    const mailPass = this.configService.get<string>('MAIL_PASS', 'B!rdv!ew@2024');
-    const mailFromName = this.configService.get<string>('MAIL_FROM_NAME', 'Birdview Customer Care');
-    const mailFromAddress = this.configService.get<string>('MAIL_FROM_ADDRESS', 'customerservice@birdviewinsurance.com');
-    const mailSecure = this.configService.get<boolean>('MAIL_SECURE', true);
+  constructor(private readonly configService: ConfigService) {
+    // Load environment variables with defaults
+    const host = this.configService.get<string>('MAIL_HOST') || 'mail5016.site4now.net';
+    const port = Number(this.configService.get<number>('MAIL_PORT', 587));
+    const user = this.configService.get<string>('MAIL_USER') || 'customerservice@birdviewinsurance.com';
+    const pass = this.configService.get<string>('MAIL_PASS') || 'B!rdv!ew@2024';
+    const fromName = this.configService.get<string>('MAIL_FROM_NAME') || 'Birdview Customer Care';
+    const fromAddress = this.configService.get<string>('MAIL_FROM_ADDRESS') || 'customerservice@birdviewinsurance.com';
+    const secure = port === 465; // SSL if port 465
 
-    console.log('📧 Email Configuration:');
-    console.log(`   Host: ${mailHost}`);
-    console.log(`   Port: ${mailPort}`);
-    console.log(`   User: ${mailUser}`);
-    console.log(`   From: ${mailFromName} <${mailFromAddress}>`);
-    console.log(`   Secure: ${mailSecure}`);
+    // Log configuration
+    this.logger.log('📧 Email Configuration:');
+    this.logger.log(`   Host: ${host}`);
+    this.logger.log(`   Port: ${port}`);
+    this.logger.log(`   User: ${user}`);
+    this.logger.log(`   From: ${fromName} <${fromAddress}>`);
+    this.logger.log(`   Secure: ${secure}`);
 
-    // Create transporter with environment variables
+    // Create transporter
     this.transporter = nodemailer.createTransport({
-      host: mailHost,
-      port: mailPort,
-      secure: mailSecure,
+      host,
+      port,
+      secure,
       auth: {
-        user: mailUser,
-        pass: mailPass,
+        user,
+        pass,
       },
-      // Add proper HELO identification
-      name: 'birdviewinsurance.com',
-      // Connection pooling
+      tls: {
+        rejectUnauthorized: false, // allows self-signed certs (needed for Render)
+      },
       pool: true,
-      maxConnections: 5,
-      // Timeout settings
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
+      maxConnections: 3,
+      connectionTimeout: 20000,
+      greetingTimeout: 20000,
+      socketTimeout: 20000,
     });
 
-    // Test connection on startup
-    this.testConnection();
-  }
-
-  private async testConnection(): Promise<void> {
-    try {
-      await this.transporter.verify();
-      console.log('✅ SMTP connection verified successfully');
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('❌ SMTP connection failed:', errorMessage);
-    }
+    // Test connection without throwing
+    this.transporter.verify((err, success) => {
+      if (err) {
+        this.logger.warn(`❌ SMTP connection failed: ${err.message}`);
+      } else {
+        this.logger.log('✅ SMTP connection verified successfully');
+      }
+    });
   }
 
   async sendEmail(to: string, subject: string, html: string): Promise<EmailResult> {
-    // Get from address from config
-    const mailFromName = this.configService.get<string>('MAIL_FROM_NAME', 'Birdview Customer Care');
-    const mailFromAddress = this.configService.get<string>('MAIL_FROM_ADDRESS', 'customerservice@birdviewinsurance.com');
-    
-    // Generate a proper Message-ID with your domain
-    const timestamp = Date.now();
-    const randomId = Math.random().toString(36).substring(2, 15);
-    const messageId = `<${timestamp}.${randomId}@birdviewinsurance.com>`;
-    
+    const fromName = this.configService.get<string>('MAIL_FROM_NAME') || 'Birdview Customer Care';
+    const fromAddress = this.configService.get<string>('MAIL_FROM_ADDRESS') || 'customerservice@birdviewinsurance.com';
+
+    const messageId = `<${Date.now()}.${Math.random().toString(36).substring(2)}@birdviewinsurance.com>`;
+
     try {
-      console.log(`📧 Preparing email to: ${to}`);
-      console.log(`📧 From: ${mailFromName} <${mailFromAddress}>`);
-      
       const info = await this.transporter.sendMail({
-        from: `"${mailFromName}" <${mailFromAddress}>`,
+        from: `"${fromName}" <${fromAddress}>`,
         to,
         subject,
         html,
         text: this.htmlToText(html),
-        // Custom Message-ID to avoid @localhost
-        messageId: messageId,
-        // Additional headers for better deliverability
+        messageId,
         headers: {
-          'X-Mailer': 'Birdview Notification System v1.0',
-          'X-Priority': '1',
-          'X-MSMail-Priority': 'High',
-          'Importance': 'high',
-          'Precedence': 'bulk',
+          'X-Mailer': 'Birdview Notification System',
           'Auto-Submitted': 'auto-generated',
-          'List-Unsubscribe': `<mailto:${mailFromAddress}?subject=unsubscribe>`,
-          'X-Originating-IP': '197.248.54.99',
+          'Precedence': 'bulk',
         },
-        // Date header
-        date: new Date(),
       });
 
-      console.log(`✅ Email sent successfully to: ${to}`);
-      console.log(`📨 Message ID: ${info.messageId}`);
-      
-      return {
-        success: true,
-        messageId: info.messageId,
-        response: info.response,
-      };
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`❌ Failed to send email to ${to}:`, errorMessage);
-      
-      return {
-        success: false,
-        error: errorMessage,
-      };
+      this.logger.log(`✅ Email sent → ${to}`);
+      return { success: true, messageId: info.messageId, response: info.response };
+    } catch (error: any) {
+      this.logger.error(`❌ Email failed → ${to}`, error.message);
+      return { success: false, error: error.message };
     }
+  }
+
+  async sendBulk(
+    emails: Array<{ to: string; subject: string; html: string }>
+  ): Promise<Array<{ to: string; success: boolean; messageId?: string; error?: string }>> {
+    const results: Array<{ to: string; success: boolean; messageId?: string; error?: string }> = [];
+    for (const email of emails) {
+      const result = await this.sendEmail(email.to, email.subject, email.html);
+      results.push({ to: email.to, ...result });
+    }
+    return results;
   }
 
   private htmlToText(html: string): string {
