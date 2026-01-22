@@ -349,7 +349,7 @@ const LoginPage: React.FC = () => {
     <div className="min-h-screen bg-primary flex flex-col justify-center py-12 px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <div className="inline-flex items-center justify-center p-3 bg-blue-600 rounded-2xl shadow-xl shadow-blue-600/30 mb-6">
-          <BellIcon className="h-10 w-10 text-white" />
+          <BellIcon className="h-7 w-7 text-white" />
         </div>
         <h2 className="text-3xl font-extrabold text-primary dark:text-white">
           {showResetPassword ? 'Reset Password' : showForgotPassword ? 'Forgot Password' : 'Welcome Back'}
