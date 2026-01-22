@@ -666,10 +666,7 @@ const TemplatesPage: React.FC = () => {
             <DocumentTextIcon className="absolute left-3 top-3.5 h-5 w-5 text-secondary" />
           </div>
 
-          {/* API Base URL Info */}
-          <div className="mb-4 text-xs text-gray-500 dark:text-gray-400">
-            API Endpoint: <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{API_BASE_URL}</code>
-          </div>
+          
 
           {/* Templates Section */}
           {isLoading ? (
