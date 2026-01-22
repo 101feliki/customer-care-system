@@ -72,7 +72,7 @@ const SettingsPage: React.FC = () => {
   });
 
   // API Base URL - FIXED: Backend runs on port 3001
-  const API_BASE_URL = 'http://localhost:3001';
+  const API_BASE_URL = import.meta.env.VITE_API_URL;
 
   // Helper functions for role checks - FIXED: Handle both uppercase and lowercase
   const isUserAdmin = () => {

@@ -54,7 +54,7 @@ const RecipientsPage: React.FC = () => {
   const [uploading, setUploading] = useState(false);
 
   // API CONFIGURATION
-  const API_BASE_URL = 'http://localhost:3001';
+  const API_BASE_URL = import.meta.env.VITE_API_URL;
 
   // Load recipients from REAL API
   useEffect(() => {

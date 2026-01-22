@@ -12,15 +12,15 @@ import {
   ChatBubbleBottomCenterTextIcon, 
   BellIcon,
   XMarkIcon,
-  
   PaperAirplaneIcon,
- 
   SparklesIcon,
   LightBulbIcon,
   ExclamationCircleIcon,
   CheckCircleIcon,
-  
 } from '@heroicons/react/24/outline';
+
+// Get API base URL from environment variable
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 // --- Types matching your NestJS Backend ---
 interface Template {
@@ -45,6 +45,228 @@ interface Recipient {
   createdAt?: string;
 }
 
+interface SendNotificationPayload {
+  templateId: string;
+  channel: 'email' | 'sms';
+  recipients: {
+    recipientId: string;
+    email: string;
+    phone?: string;
+    variables: Record<string, string>;
+  }[];
+  variables: Record<string, string>;
+}
+
+interface RecipientStats {
+  total: number;
+  active: number;
+  inactive: number;
+  blocked: number;
+}
+
+// ==================== API SERVICE FUNCTIONS ====================
+class TemplateAPIService {
+  // Fetch all templates
+  static async fetchTemplates(token: string): Promise<Template[]> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/templates`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch templates: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return this.extractTemplates(data);
+    } catch (error) {
+      console.error('Error fetching templates:', error);
+      throw error;
+    }
+  }
+
+  // Fetch all recipients
+  static async fetchRecipients(token: string): Promise<Recipient[]> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/recipients`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch recipients: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return this.extractRecipients(data);
+    } catch (error) {
+      console.error('Error fetching recipients:', error);
+      throw error;
+    }
+  }
+
+  // Create new template
+  static async createTemplate(token: string, templateData: Partial<Template>): Promise<Template> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/templates`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(templateData)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to create template: ${response.status} - ${errorText}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating template:', error);
+      throw error;
+    }
+  }
+
+  // Update existing template
+  static async updateTemplate(token: string, templateId: string, templateData: Partial<Template>): Promise<Template> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/templates/${templateId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(templateData)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to update template: ${response.status} - ${errorText}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating template:', error);
+      throw error;
+    }
+  }
+
+  // Delete template
+  static async deleteTemplate(token: string, templateId: string): Promise<void> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/templates/${templateId}`, {
+        method: 'DELETE',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to delete template: ${response.status} - ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      throw error;
+    }
+  }
+
+  // Send bulk notifications
+  static async sendBulkNotifications(token: string, payload: SendNotificationPayload): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/bulk-notifications/send`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to send notifications: ${response.status} - ${errorText}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error sending notifications:', error);
+      throw error;
+    }
+  }
+
+  // Helper to extract templates from various response formats
+  private static extractTemplates(data: any): Template[] {
+    let templatesArray: any[] = [];
+    
+    if (data?.templates && Array.isArray(data.templates)) {
+      templatesArray = data.templates;
+    } else if (Array.isArray(data)) {
+      templatesArray = data;
+    } else if (data?.data && Array.isArray(data.data)) {
+      templatesArray = data.data;
+    } else {
+      templatesArray = [];
+    }
+    
+    return templatesArray.map(item => ({
+      id: item.id || '',
+      name: item.name || 'Unnamed Template',
+      type: item.type || 'EMAIL',
+      content: item.content || item.htmlBody || '',
+      subject: item.subject || '',
+      htmlBody: item.htmlBody || '',
+      textBody: item.textBody || '',
+      variables: item.variables || [],
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt
+    }));
+  }
+
+  // Helper to extract recipients from various response formats
+  private static extractRecipients(data: any): Recipient[] {
+    let recipientsArray: any[] = [];
+    
+    if (Array.isArray(data)) {
+      recipientsArray = data;
+    } else if (data?.recipients && Array.isArray(data.recipients)) {
+      recipientsArray = data.recipients;
+    } else if (data?.data && Array.isArray(data.data)) {
+      recipientsArray = data.data;
+    } else {
+      recipientsArray = [];
+    }
+    
+    return recipientsArray.map(recipient => ({
+      id: recipient.id || '',
+      name: recipient.name || 'Unknown',
+      email: recipient.email || '',
+      phone: recipient.phone || '',
+      status: recipient.status || 'active',
+      createdAt: recipient.createdAt
+    }));
+  }
+
+  // Calculate recipient statistics
+  static calculateRecipientStats(recipients: Recipient[]): RecipientStats {
+    return {
+      total: recipients.length,
+      active: recipients.filter(r => r.status === 'active').length,
+      inactive: recipients.filter(r => r.status === 'inactive').length,
+      blocked: recipients.filter(r => r.status === 'blocked').length,
+    };
+  }
+}
+
+// ==================== MAIN COMPONENT ====================
 const TemplatesPage: React.FC = () => {
   
   const { token } = useAuth(); 
@@ -80,21 +302,19 @@ const TemplatesPage: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState('');
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
-
-  // --- Recipients Section State ---
-  //const [showRecipientsSection, setShowRecipientsSection] = useState(false);
   const [recipientsLoading, setRecipientsLoading] = useState(false);
-  const [recipientStats, setRecipientStats] = useState({
+  const [recipientStats, setRecipientStats] = useState<RecipientStats>({
     total: 0,
     active: 0,
     inactive: 0,
     blocked: 0
   });
 
-  // 1. FETCH TEMPLATES FROM BACKEND
+  // ==================== API CALL FUNCTIONS ====================
+
+  // 1. Fetch templates from backend
   const fetchTemplates = async () => {
     if (!token) {
-      console.log('❌ No token available');
       setError('Please login first');
       setIsLoading(false);
       return;
@@ -103,75 +323,24 @@ const TemplatesPage: React.FC = () => {
     try {
       setIsLoading(true);
       setError('');
-      console.log('🔍 Fetching templates...');
       
-      const response = await fetch('http://localhost:3001/templates', {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      console.log(`🔍 Fetching templates from: ${API_BASE_URL}`);
+      const fetchedTemplates = await TemplateAPIService.fetchTemplates(token);
+      setTemplates(fetchedTemplates);
       
-      console.log('📡 Status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ HTTP Error:', response.status, errorText);
-        throw new Error(`Failed to fetch templates: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('✅ API Response:', data);
-      
-      // Extract templates array from response
-      let templatesArray: any[] = [];
-      
-      if (data && data.templates && Array.isArray(data.templates)) {
-        templatesArray = data.templates;
-        console.log(`✅ Found ${templatesArray.length} templates in "templates" property`);
-      } else if (Array.isArray(data)) {
-        templatesArray = data;
-        console.log(`✅ Found ${templatesArray.length} templates in direct array`);
-      } else if (data && data.data && Array.isArray(data.data)) {
-        templatesArray = data.data;
-        console.log(`✅ Found ${templatesArray.length} templates in "data" property`);
-      } else {
-        console.warn('⚠️ Unexpected response format:', data);
-        templatesArray = [];
-      }
-      
-      // Map to your Template interface
-      const mappedTemplates: Template[] = templatesArray.map(item => ({
-        id: item.id || '',
-        name: item.name || 'Unnamed Template',
-        type: item.type || 'EMAIL',
-        content: item.content || item.htmlBody || '',
-        subject: item.subject || '',
-        htmlBody: item.htmlBody || '',
-        textBody: item.textBody || '',
-        variables: item.variables || [],
-        createdAt: item.createdAt,
-        updatedAt: item.updatedAt
-      }));
-      
-      console.log('✅ Mapped templates:', mappedTemplates);
-      setTemplates(mappedTemplates);
-      
-      if (mappedTemplates.length === 0) {
+      if (fetchedTemplates.length === 0) {
         console.log('ℹ️ No templates found in database');
       }
-      
     } catch (err) {
       console.error('❌ Error fetching templates:', err);
       setError(`Could not load templates: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setTemplates([]);
     } finally {
       setIsLoading(false);
-      console.log('🏁 Loading completed');
     }
   };
 
-  // 2. FETCH RECIPIENTS FOR SENDING AND DISPLAY
+  // 2. Fetch recipients for sending and display
   const fetchRecipients = async () => {
     if (!token) {
       console.log('❌ No token for fetching recipients');
@@ -180,56 +349,13 @@ const TemplatesPage: React.FC = () => {
     
     try {
       setRecipientsLoading(true);
-      console.log('🔍 Fetching recipients...');
       
-      const response = await fetch('http://localhost:3001/recipients', {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      console.log('📡 Recipients status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Error fetching recipients:', errorText);
-        return;
-      }
-      
-      const data = await response.json();
-      console.log('✅ Recipients response:', data);
-      
-      // Handle different response formats
-      let recipientsArray: any[] = [];
-      
-      if (Array.isArray(data)) {
-        recipientsArray = data;
-      } else if (data && data.recipients && Array.isArray(data.recipients)) {
-        recipientsArray = data.recipients;
-      } else if (data && data.data && Array.isArray(data.data)) {
-        recipientsArray = data.data;
-      }
-      
-      console.log(`✅ Found ${recipientsArray.length} recipients`);
-      const mappedRecipients: Recipient[] = recipientsArray.map(recipient => ({
-        id: recipient.id || '',
-        name: recipient.name || 'Unknown',
-        email: recipient.email || '',
-        phone: recipient.phone || '',
-        status: recipient.status || 'active',
-        createdAt: recipient.createdAt
-      }));
-      
-      setRecipients(mappedRecipients);
+      console.log(`🔍 Fetching recipients from: ${API_BASE_URL}`);
+      const fetchedRecipients = await TemplateAPIService.fetchRecipients(token);
+      setRecipients(fetchedRecipients);
       
       // Calculate stats
-      const stats = {
-        total: mappedRecipients.length,
-        active: mappedRecipients.filter(r => r.status === 'active').length,
-        inactive: mappedRecipients.filter(r => r.status === 'inactive').length,
-        blocked: mappedRecipients.filter(r => r.status === 'blocked').length,
-      };
+      const stats = TemplateAPIService.calculateRecipientStats(fetchedRecipients);
       setRecipientStats(stats);
       
     } catch (err) {
@@ -239,13 +365,7 @@ const TemplatesPage: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (token) {
-      fetchTemplates();
-    }
-  }, [token]);
-
-  // 3. CREATE OR UPDATE TEMPLATE
+  // 3. Create or update template
   const handleSubmit = async () => {
     if (!formData.name) {
       alert('Name is required');
@@ -269,14 +389,8 @@ const TemplatesPage: React.FC = () => {
     }
 
     try {
-      const url = isEditMode 
-        ? `http://localhost:3001/templates/${formData.id}`
-        : 'http://localhost:3001/templates';
-      
-      const method = isEditMode ? 'PUT' : 'POST';
-
       // Prepare request based on template type
-      const requestBody: any = {
+      const requestBody: Partial<Template> = {
         name: formData.name,
         type: formData.type,
       };
@@ -293,34 +407,26 @@ const TemplatesPage: React.FC = () => {
         requestBody.variables = formData.variables;
       }
 
-      console.log('Sending request:', { url, method, body: requestBody });
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      const responseText = await response.text();
-      console.log('Response:', response.status, responseText);
-
-      if (!response.ok) {
-        throw new Error(`Failed: ${response.status} ${responseText}`);
+      if (isEditMode) {
+        console.log(`📝 Updating template at: ${API_BASE_URL}/templates/${formData.id}`);
+        await TemplateAPIService.updateTemplate(token, formData.id, requestBody);
+        alert('✅ Template Updated!');
+      } else {
+        console.log(`📝 Creating template at: ${API_BASE_URL}/templates`);
+        await TemplateAPIService.createTemplate(token, requestBody);
+        alert('✅ Template Created!');
       }
 
       setShowModal(false);
       fetchTemplates(); 
-      alert(isEditMode ? '✅ Template Updated!' : '✅ Template Created!');
+      
     } catch (err) {
       console.error('Error saving template:', err);
       alert(`❌ Error saving template: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
-  // 4. DELETE TEMPLATE
+  // 4. Delete template
   const handleDelete = async (id: string) => {
     if (!token) {
       alert('Please login first');
@@ -330,28 +436,17 @@ const TemplatesPage: React.FC = () => {
     if(!window.confirm('Are you sure you want to delete this template?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3001/templates/${id}`, {
-        method: 'DELETE',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        setTemplates(prev => prev.filter(t => t.id !== id));
-        alert('✅ Template deleted successfully');
-      } else {
-        const errorText = await response.text();
-        throw new Error(`Failed to delete: ${errorText}`);
-      }
+      console.log(`🗑️ Deleting template at: ${API_BASE_URL}/templates/${id}`);
+      await TemplateAPIService.deleteTemplate(token, id);
+      setTemplates(prev => prev.filter(t => t.id !== id));
+      alert('✅ Template deleted successfully');
     } catch (err) {
       console.error('Delete error:', err);
       alert('❌ Failed to delete template');
     }
   };
 
-  // 5. SEND TEMPLATE TO RECIPIENTS - FIXED VERSION
+  // 5. Send template to recipients
   const handleSendTemplate = (template: Template) => {
     setSelectedTemplateForSend(template);
     setVariableValues({});
@@ -379,9 +474,9 @@ const TemplatesPage: React.FC = () => {
       );
 
       // Prepare payload for bulk notifications endpoint
-      const payload = {
+      const payload: SendNotificationPayload = {
         templateId: selectedTemplateForSend.id,
-        channel: (selectedTemplateForSend.type || 'EMAIL').toLowerCase() as 'email' | 'sms',
+        channel: (selectedTemplateForSend.type?.toLowerCase() as 'email' | 'sms') || 'email',
         recipients: selectedRecipientDetails.map(recipient => ({
           recipientId: recipient.id,
           email: recipient.email,
@@ -395,36 +490,10 @@ const TemplatesPage: React.FC = () => {
         variables: variableValues
       };
 
-      console.log('📤 Sending notification with payload:', payload);
+      console.log(`📤 Sending notifications to: ${API_BASE_URL}/bulk-notifications/send`);
+      const response = await TemplateAPIService.sendBulkNotifications(token, payload);
 
-      // Use the bulk notifications endpoint
-      const response = await fetch('http://localhost:3001/bulk-notifications/send', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      console.log('📡 Response status:', response.status);
-      
-      const responseText = await response.text();
-      console.log('📡 Response text:', responseText);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to send: ${response.status} - ${responseText}`);
-      }
-
-      // Parse response
-      let responseData;
-      try {
-        responseData = JSON.parse(responseText);
-      } catch {
-        responseData = { message: 'Notification sent successfully!' };
-      }
-
-      alert(`✅ ${responseData.message || `Notifications sent to ${selectedRecipientDetails.length} recipient(s)!`}`);
+      alert(`✅ ${response.message || `Notifications sent to ${selectedRecipientDetails.length} recipient(s)!`}`);
       setShowSendModal(false);
       
     } catch (error) {
@@ -438,7 +507,7 @@ const TemplatesPage: React.FC = () => {
         } else if (error.message.includes('401') || error.message.includes('403')) {
           errorMsg = 'Authentication failed. Please login again.';
         } else if (error.message.includes('Network')) {
-          errorMsg = 'Network error. Check backend is running on localhost:3001.';
+          errorMsg = `Network error. Check backend is running on ${API_BASE_URL}.`;
         } else if (error.message.includes('recipients is not iterable')) {
           errorMsg = 'Invalid recipients format. Please try again.';
         } else if (error.message.includes('Mail delivery failed')) {
@@ -553,6 +622,13 @@ const TemplatesPage: React.FC = () => {
     t.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Fetch templates on component mount
+  useEffect(() => {
+    if (token) {
+      fetchTemplates();
+    }
+  }, [token]);
+
   return (
     <div className="h-screen flex overflow-hidden bg-primary transition-colors duration-200">
       <Sidebar />
@@ -588,6 +664,11 @@ const TemplatesPage: React.FC = () => {
               className="w-full pl-10 pr-4 py-3 rounded-xl border border-color bg-card text-primary outline-none focus:ring-2 focus:ring-blue-500"
             />
             <DocumentTextIcon className="absolute left-3 top-3.5 h-5 w-5 text-secondary" />
+          </div>
+
+          {/* API Base URL Info */}
+          <div className="mb-4 text-xs text-gray-500 dark:text-gray-400">
+            API Endpoint: <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{API_BASE_URL}</code>
           </div>
 
           {/* Templates Section */}
