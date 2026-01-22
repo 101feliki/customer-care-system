@@ -1,101 +1,114 @@
 /* eslint-disable prettier/prettier */
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
- 
+
+export interface EmailResult {
+  success: boolean;
+  messageId?: string;
+  response?: string;
+  error?: string;
+}
+
 @Injectable()
 export class MailerService {
-  private transporter;
+  private readonly logger = new Logger(MailerService.name);
+  private transporter: nodemailer.Transporter;
 
-  constructor() {
-    // Debugging: print env
-    console.log('🚀 MailerService initializing...');
-    console.log('🚀 SMTP_HOST   =', process.env.SMTP_HOST);
-    console.log('🚀 SMTP_PORT   =', process.env.SMTP_PORT);
-    console.log('🚀 SMTP_USER   =', process.env.SMTP_USER);
-    console.log('🚀 FROM_EMAIL  =', process.env.FROM_EMAIL);
+  constructor(private readonly configService: ConfigService) {
+    const host = this.configService.get<string>('MAIL_HOST');
+    const port = Number(this.configService.get<number>('MAIL_PORT', 465));
+    const user = this.configService.get<string>('MAIL_USER');
+    const pass = this.configService.get<string>('MAIL_PASS');
+    const fromName = this.configService.get<string>('MAIL_FROM_NAME', 'Birdview Customer Care');
+    const fromAddress = this.configService.get<string>('MAIL_FROM_ADDRESS');
 
-    if (
-      !process.env.SMTP_HOST ||
-      !process.env.SMTP_PORT ||
-      !process.env.SMTP_USER ||
-      !process.env.SMTP_PASS
-    ) {
-      throw new InternalServerErrorException('❌ Missing SMTP configuration in .env!');
+    if (!host || !user || !pass || !fromAddress) {
+      this.logger.error('❌ Missing required SMTP environment variables!');
+      throw new InternalServerErrorException('Missing SMTP configuration');
     }
 
+    this.logger.log('📧 Initializing MailerService...');
+    this.logger.log(`   Host: ${host}`);
+    this.logger.log(`   Port: ${port}`);
+    this.logger.log(`   User: ${user}`);
+    this.logger.log(`   From: ${fromName} <${fromAddress}>`);
+
+    // Nodemailer transport config
     this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST?.trim(),
-      port: Number(process.env.SMTP_PORT),
-      secure:false, // SSL if port 465
-      auth: {
-        user: process.env.SMTP_USER?.trim(),
-        pass: process.env.SMTP_PASS?.trim(),
-      },
-      logger: true,   // logs SMTP commands
-      debug: true,    // prints detailed server responses
-      tls: {
-        rejectUnauthorized: false, // allows self-signed certs
-      },
-      // Remove pooling for now to avoid dropped connections
-      // pool: true,
-      // maxConnections: 1,
-      // maxMessages: 5,
+      host,
+      port,
+      secure: port === 465, // SSL for 465, STARTTLS for 587
+      auth: { user, pass },
+      tls: { rejectUnauthorized: false }, // avoids Render TLS handshake issues
+      pool: true,
+      maxConnections: 3,
+      connectionTimeout: 20000,
+      socketTimeout: 20000,
     });
-    
 
-    this.transporter.verify((err, success) => {
-      if (err) {
-        console.error('SMTP VERIFY ERROR:', err.message);
-      } else {
-        console.log('✅ SMTP connection ready');
-      }
-    });
+    // Only verify SMTP in non-production to avoid startup blocks
+    if (process.env.NODE_ENV !== 'production') {
+      this.transporter.verify((err, success) => {
+        if (err) {
+          this.logger.warn('SMTP verify failed:', err.message);
+        } else {
+          this.logger.log('✅ SMTP connection verified (non-prod)');
+        }
+      });
+    }
   }
 
-  // Replaces {{key}} in templates with actual values
-  private parseTemplate(html: string, data: Record<string, any>): string {
-    return html.replace(/{{(.*?)}}/g, (match, key) => {
-      const value = data[key.trim()];
-      return value !== undefined ? value : match;
-    });
-  }
+  // Send single email
+  async sendEmail(to: string, subject: string, html: string): Promise<EmailResult> {
+    const fromName = this.configService.get<string>('MAIL_FROM_NAME', 'Birdview Customer Care');
+    const fromAddress = this.configService.get<string>('MAIL_FROM_ADDRESS');
 
-  async send(
-    to: string,
-    subject: string,
-    templateHtml: string,
-    data: Record<string, any>
-  ): Promise<{ success: boolean; messageId?: string; error?: string }> {
-    const finalHtml = this.parseTemplate(templateHtml, data);
+    const messageId = `<${Date.now()}.${Math.random().toString(36).substring(2)}@birdviewinsurance.com>`;
 
     try {
       const info = await this.transporter.sendMail({
-        from: process.env.SMTP_USER, // must match SMTP user for Site4Now
+        from: `"${fromName}" <${fromAddress}>`,
         to,
-        subject: this.parseTemplate(subject, data),
-        html: finalHtml,
+        subject,
+        html,
+        text: this.htmlToText(html),
+        messageId,
+        headers: {
+          'X-Mailer': 'Birdview Notification System',
+          'Auto-Submitted': 'auto-generated',
+          'Precedence': 'bulk',
+        },
       });
 
-      console.log('📧 Email sent:', info.messageId);
-      return { success: true, messageId: info.messageId };
+      this.logger.log(`✅ Email sent → ${to}`);
+      return { success: true, messageId: info.messageId, response: info.response };
     } catch (error: any) {
-      console.error('❌ Failed to send email:', error);
-      return { success: false, error: error.message };
+      const msg = error instanceof Error ? error.message : 'Unknown SMTP error';
+      this.logger.error(`❌ Failed to send email → ${to}`, msg);
+      return { success: false, error: msg };
     }
   }
 
   // Bulk sending
   async sendBulk(
-  emails: Array<{ to: string; subject: string; templateHtml: string; data: Record<string, any> }>
-) {
-  const results: Array<{ to: string; success: boolean; messageId?: string; error?: string }> = [];
-
-  for (const email of emails) {
-    const result = await this.send(email.to, email.subject, email.templateHtml, email.data);
-    results.push({ to: email.to, ...result });
+    emails: Array<{ to: string; subject: string; html: string }>
+  ): Promise<Array<EmailResult & { to: string }>> {
+    const results: Array<EmailResult & { to: string }> = [];
+    for (const email of emails) {
+      const result = await this.sendEmail(email.to, email.subject, email.html);
+      results.push({ to: email.to, ...result });
+    }
+    return results;
   }
 
-  return results;
-} 
+  // Convert HTML to plain text
+  private htmlToText(html: string): string {
+    return html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<p\s*\/?>/gi, '\n\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
 }
-
