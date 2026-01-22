@@ -362,9 +362,7 @@ const LoginPage: React.FC = () => {
               : 'Customer Care Notification System'
           }
         </p>
-        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-          API Endpoint: <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{API_BASE_URL}</code>
-        </div>
+        
       </div>
 
       <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-md">
@@ -412,7 +410,7 @@ const LoginPage: React.FC = () => {
                     autoComplete="email"
                   />
                 </div>
-                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mt-2 text-xs text-gray-900 dark:text-gray-900">
                   We'll send you a link to reset your password
                 </p>
               </div>
@@ -598,16 +596,7 @@ const LoginPage: React.FC = () => {
                 ) : 'Sign In'}
               </button>
 
-              {/* Demo Credentials Info */}
-              <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <p className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">Demo Credentials:</p>
-                <p className="text-xs text-blue-700 dark:text-blue-400">
-                  Email: <code className="bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded">admin@example.com</code>
-                </p>
-                <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
-                  Password: <code className="bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded">admin123</code>
-                </p>
-              </div>
+             
             </form>
           </div>
         )}
