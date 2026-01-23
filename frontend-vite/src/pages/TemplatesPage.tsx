@@ -667,10 +667,7 @@ const TemplatesPage: React.FC = () => {
             <DocumentTextIcon className="absolute left-3 top-3.5 h-5 w-5 text-secondary" />
           </div>
 
-          {/* API Base URL Info */}
-          <div className="mb-4 text-xs text-gray-500 dark:text-gray-400">
-            API Endpoint: <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{API_BASE_URL}</code>
-          </div>
+          
 
           {/* Templates Section */}
           {isLoading ? (
@@ -693,7 +690,7 @@ const TemplatesPage: React.FC = () => {
                       </div>
                       <div className="min-w-0 flex-1">
                         <h3 className="font-bold text-primary truncate">{template.name}</h3>
-                        <span className="text-xs font-mono text-secondary bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">
+                        <span className="text-xs font-mono text-secondary bg-gray-100 dark:bg-gray-600 px-2 py-0.5 rounded">
                           {template.type || 'EMAIL'}
                         </span>
                       </div>
