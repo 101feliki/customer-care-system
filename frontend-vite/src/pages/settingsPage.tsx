@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { toast } from 'react-hot-toast';
 import { 
   BellIcon, 
@@ -40,6 +41,7 @@ interface AdminUser {
 
 const SettingsPage: React.FC = () => {
   const { user, token } = useAuth();
+  const { theme } = useTheme(); // Get theme from context
   const [activeTab, setActiveTab] = useState('notifications');
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
@@ -75,6 +77,11 @@ const SettingsPage: React.FC = () => {
 
   // API Base URL
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+  // Helper function to get theme-based classes
+  const getThemeClass = (lightClass: string, darkClass: string) => {
+    return theme === 'dark' ? darkClass : lightClass;
+  };
 
   // Helper functions for role checks
   const isUserAdmin = () => {
@@ -544,16 +551,29 @@ const SettingsPage: React.FC = () => {
   const renderRoleBadge = (role: string, isCompact: boolean = false) => {
     const roleLower = role.toLowerCase();
     const colors = {
-      superadmin: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-      admin: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-      user: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+      superadmin: {
+        light: 'bg-purple-100 text-purple-800',
+        dark: 'bg-purple-900 text-purple-300'
+      },
+      admin: {
+        light: 'bg-blue-100 text-blue-800',
+        dark: 'bg-blue-900 text-blue-300'
+      },
+      user: {
+        light: 'bg-gray-100 text-gray-800',
+        dark: 'bg-gray-800 text-gray-300'
+      }
     };
     
     const text = roleLower === 'superadmin' ? 'Super Admin' : 
                  roleLower === 'admin' ? 'Admin' : 'User';
     
     return (
-      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${colors[roleLower as keyof typeof colors]}`}>
+      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+        theme === 'dark' 
+          ? colors[roleLower as keyof typeof colors].dark 
+          : colors[roleLower as keyof typeof colors].light
+      }`}>
         {!isCompact && <ShieldCheckIcon className="h-3 w-3 mr-1" />}
         {text}
       </span>
@@ -565,9 +585,15 @@ const SettingsPage: React.FC = () => {
     const isCurrentUser = currentUserId === userItem.id;
     
     return (
-      <tr key={userItem.id} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+      <tr key={userItem.id} className={`border-b ${
+        theme === 'dark' 
+          ? 'border-gray-700 hover:bg-gray-800' 
+          : 'border-gray-200 hover:bg-gray-50'
+      } transition-colors`}>
         {/* ID */}
-        <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 font-mono">
+        <td className="px-3 py-2 text-xs font-mono ${
+          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+        }">
           #{userItem.id.substring(0, 8)}...
         </td>
         
@@ -578,10 +604,14 @@ const SettingsPage: React.FC = () => {
               {userItem.name.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <div className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[150px]">
+              <div className={`text-sm font-medium truncate max-w-[150px] ${
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              }`}>
                 {userItem.name}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[150px]">
+              <div className={`text-xs truncate max-w-[150px] ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+              }`}>
                 {userItem.email}
               </div>
             </div>
@@ -597,12 +627,16 @@ const SettingsPage: React.FC = () => {
         <td className="px-3 py-2">
           <div className="flex items-center">
             {userItem.isVerified ? (
-              <span className="inline-flex items-center text-green-600 dark:text-green-400 text-xs">
+              <span className={`inline-flex items-center text-xs ${
+                theme === 'dark' ? 'text-green-400' : 'text-green-600'
+              }`}>
                 <CheckCircleIcon className="h-3 w-3 mr-1" />
                 Verified
               </span>
             ) : (
-              <span className="inline-flex items-center text-amber-600 dark:text-amber-400 text-xs">
+              <span className={`inline-flex items-center text-xs ${
+                theme === 'dark' ? 'text-amber-400' : 'text-amber-600'
+              }`}>
                 <ClockIcon className="h-3 w-3 mr-1" />
                 Pending
               </span>
@@ -611,7 +645,9 @@ const SettingsPage: React.FC = () => {
         </td>
         
         {/* Created */}
-        <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
+        <td className="px-3 py-2 text-xs ${
+          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+        }">
           <div className="flex items-center">
             <ClockIcon className="h-3 w-3 mr-1" />
             {formatDate(userItem.createdAt)}
@@ -626,7 +662,11 @@ const SettingsPage: React.FC = () => {
               <select
                 value={userItem.role}
                 onChange={(e) => updateUserRole(userItem.id, e.target.value as 'USER' | 'ADMIN' | 'SUPERADMIN')}
-                className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs text-gray-700 dark:text-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className={`border rounded px-2 py-1 text-xs ${
+                  theme === 'dark' 
+                    ? 'bg-gray-800 border-gray-600 text-gray-300' 
+                    : 'bg-white border-gray-300 text-gray-700'
+                } focus:ring-1 focus:ring-blue-500 focus:border-blue-500`}
                 disabled={isCurrentUser}
               >
                 <option value="USER">User</option>
@@ -639,7 +679,9 @@ const SettingsPage: React.FC = () => {
             {!userItem.isVerified && isUserAdmin() && (
               <button
                 onClick={() => markUserAsVerified(userItem.id)}
-                className="p-1 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
+                className={`p-1 text-green-600 rounded ${
+                  theme === 'dark' ? 'hover:bg-green-900/20' : 'hover:bg-green-50'
+                }`}
                 title="Mark as Verified"
               >
                 <CheckCircleIcon className="h-4 w-4" />
@@ -650,7 +692,9 @@ const SettingsPage: React.FC = () => {
             {!userItem.isVerified && isUserAdmin() && (
               <button
                 onClick={() => verifyUser(userItem.id)}
-                className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+                className={`p-1 text-blue-600 rounded ${
+                  theme === 'dark' ? 'hover:bg-blue-900/20' : 'hover:bg-blue-50'
+                }`}
                 title="Resend Verification Email"
               >
                 <EnvelopeIcon className="h-4 w-4" />
@@ -661,7 +705,9 @@ const SettingsPage: React.FC = () => {
             {isUserSuperAdmin() && !isCurrentUser && (
               <button
                 onClick={() => deleteUser(userItem.id)}
-                className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                className={`p-1 text-red-600 rounded ${
+                  theme === 'dark' ? 'hover:bg-red-900/20' : 'hover:bg-red-50'
+                }`}
                 title="Delete User"
               >
                 <TrashIcon className="h-4 w-4" />
@@ -687,9 +733,13 @@ const SettingsPage: React.FC = () => {
 
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 w-full max-w-md rounded-xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-gray-200 dark:border-gray-700">
+        <div className={`w-full max-w-md rounded-xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border ${
+          theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+        }`}>
           {/* Modal Header */}
-          <div className={`px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r ${headerGradient} text-white`}>
+          <div className={`px-4 py-3 border-b ${
+            theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+          } flex justify-between items-center bg-gradient-to-r ${headerGradient} text-white`}>
             <div className="flex items-center">
               <div className="p-2 bg-white/20 rounded-lg mr-3">
                 {isAdmin ? (
@@ -715,7 +765,9 @@ const SettingsPage: React.FC = () => {
           <div className="p-4 space-y-4 overflow-y-auto">
             {/* Email Field */}
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-900 dark:text-white">
+              <label className={`block text-sm font-medium ${
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              }`}>
                 <span className="flex items-center">
                   Email Address
                   <span className="ml-1 text-red-500">*</span>
@@ -730,7 +782,11 @@ const SettingsPage: React.FC = () => {
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                   placeholder={isAdmin ? "admin@example.com" : "user@example.com"}
-                  className="w-full pl-10 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className={`w-full pl-10 pr-3 py-2 rounded-lg border text-sm ${
+                    theme === 'dark' 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  } focus:ring-1 focus:ring-blue-500 focus:border-transparent`}
                   autoFocus
                 />
               </div>
@@ -738,7 +794,9 @@ const SettingsPage: React.FC = () => {
             
             {/* Name Field */}
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-900 dark:text-white">
+              <label className={`block text-sm font-medium ${
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              }`}>
                 <span className="flex items-center">
                   Full Name
                   <span className="ml-1 text-red-500">*</span>
@@ -753,14 +811,20 @@ const SettingsPage: React.FC = () => {
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                   placeholder={isAdmin ? "Admin User" : "John Doe"}
-                  className="w-full pl-10 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className={`w-full pl-10 pr-3 py-2 rounded-lg border text-sm ${
+                    theme === 'dark' 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  } focus:ring-1 focus:ring-blue-500 focus:border-transparent`}
                 />
               </div>
             </div>
             
             {/* Password Field */}
             <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-900 dark:text-white">
+              <label className={`block text-sm font-medium ${
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              }`}>
                 <span className="flex items-center">
                   Password
                   <span className="ml-1 text-red-500">*</span>
@@ -775,12 +839,18 @@ const SettingsPage: React.FC = () => {
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-10 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className={`w-full pl-10 pr-10 py-2 rounded-lg border text-sm ${
+                    theme === 'dark' 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  } focus:ring-1 focus:ring-blue-500 focus:border-transparent`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  className={`absolute inset-y-0 right-0 pr-3 flex items-center ${
+                    theme === 'dark' ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                  } transition-colors`}
                 >
                   {showPassword ? (
                     <EyeSlashIcon className="h-4 w-4" />
@@ -790,7 +860,9 @@ const SettingsPage: React.FC = () => {
                 </button>
               </div>
               <div className="flex items-center mt-1">
-                <div className="h-1 flex-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className={`h-1 flex-1 rounded-full overflow-hidden ${
+                  theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
+                }`}>
                   <div 
                     className={`h-full rounded-full transition-all duration-300 ${
                       formData.password.length >= 12 ? 'bg-green-500' :
@@ -800,13 +872,17 @@ const SettingsPage: React.FC = () => {
                     style={{ width: `${Math.min((formData.password.length / 12) * 100, 100)}%` }}
                   ></div>
                 </div>
-                <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                <span className={`text-xs ml-2 ${
+                  theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                }`}>
                   {formData.password.length >= 12 ? 'Strong' :
                    formData.password.length >= 8 ? 'Good' :
                    formData.password.length > 0 ? 'Weak' : ''}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className={`text-xs mt-1 ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+              }`}>
                 Minimum 8 characters
               </p>
             </div>
@@ -814,7 +890,9 @@ const SettingsPage: React.FC = () => {
             {/* Role Selection (Admin creation only) */}
             {isAdmin && (
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-900 dark:text-white">
+                <label className={`block text-sm font-medium ${
+                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                }`}>
                   <span className="flex items-center">
                     Admin Role
                     <span className="ml-1 text-red-500">*</span>
@@ -829,7 +907,11 @@ const SettingsPage: React.FC = () => {
                       className={`p-3 rounded-lg border transition-all text-sm ${
                         formData.role === role
                           ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white border-green-600 shadow'
-                          : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          : `${
+                              theme === 'dark' 
+                                ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+                                : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                            }`
                       }`}
                     >
                       <div className="flex flex-col items-center">
@@ -852,14 +934,30 @@ const SettingsPage: React.FC = () => {
             )}
             
             {/* Permissions Info Box */}
-            <div className={`${isAdmin ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'} rounded-lg p-3 border`}>
+            <div className={`rounded-lg p-3 border ${
+              isAdmin 
+                ? theme === 'dark' 
+                  ? 'bg-green-900/20 border-green-800' 
+                  : 'bg-green-50 border-green-200'
+                : theme === 'dark'
+                  ? 'bg-blue-900/20 border-blue-800'
+                  : 'bg-blue-50 border-blue-200'
+            }`}>
               <div className="flex items-start">
-                <ShieldCheckIcon className={`h-4 w-4 mr-2 mt-0.5 shrink-0 ${isAdmin ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'}`} />
+                <ShieldCheckIcon className={`h-4 w-4 mr-2 mt-0.5 shrink-0 ${
+                  isAdmin 
+                    ? theme === 'dark' ? 'text-green-400' : 'text-green-600'
+                    : theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                }`} />
                 <div>
-                  <p className="text-xs font-medium text-gray-900 dark:text-white mb-1">
+                  <p className={`text-xs font-medium mb-1 ${
+                    theme === 'dark' ? 'text-white' : 'text-gray-900'
+                  }`}>
                     {isAdmin ? 'Admin Permissions' : 'User Permissions'}
                   </p>
-                  <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
+                  <ul className={`text-xs space-y-0.5 ${
+                    theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
                     {isAdmin ? (
                       <>
                         <li className="flex items-center">
@@ -914,10 +1012,18 @@ const SettingsPage: React.FC = () => {
           </div>
           
           {/* Modal Footer */}
-          <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-2 bg-gray-50 dark:bg-gray-900/30">
+          <div className={`px-4 py-3 border-t ${
+            theme === 'dark' 
+              ? 'border-gray-700 bg-gray-900/30' 
+              : 'border-gray-200 bg-gray-50'
+          } flex justify-end space-x-2`}>
             <button
               onClick={() => setModalOpen(false)}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm flex items-center"
+              className={`px-4 py-2 border rounded-lg font-medium transition-colors text-sm flex items-center ${
+                theme === 'dark'
+                  ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                  : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+              }`}
             >
               <XMarkIcon className="h-4 w-4 mr-1" />
               Cancel
@@ -937,18 +1043,32 @@ const SettingsPage: React.FC = () => {
 
   // ========== MAIN RENDER ==========
   return (
-    <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
+    <div className={`h-screen flex overflow-hidden ${
+      theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'
+    }`}>
       <Sidebar />
 
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shrink-0 sticky top-0 z-20">
+        <header className={`border-b shrink-0 sticky top-0 z-20 ${
+          theme === 'dark' 
+            ? 'bg-gray-800 border-gray-700' 
+            : 'bg-white border-gray-200'
+        }`}>
           <div className="px-4 md:px-6 py-3">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div>
-                <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Settings</h1>
-                <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <h1 className={`text-lg font-semibold ${
+                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                }`}>
+                  Settings
+                </h1>
+                <div className={`flex items-center text-xs mt-1 ${
+                  theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                }`}>
                   <ChevronRightIcon className="h-3 w-3 mx-1" />
-                  <span className="text-blue-600 dark:text-blue-400 font-medium">
+                  <span className={`font-medium ${
+                    theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                  }`}>
                     {activeTab === 'notifications' ? 'Notifications' : 
                      activeTab === 'profile' ? 'Profile' : 
                      'Admin Panel'}
@@ -967,8 +1087,12 @@ const SettingsPage: React.FC = () => {
           {saveMessage && (
             <div className={`mb-4 p-3 rounded-lg flex items-center ${
               saveMessage.type === 'success' 
-                ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800' 
-                : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
+                ? theme === 'dark'
+                  ? 'bg-green-900/20 text-green-400 border border-green-800' 
+                  : 'bg-green-50 text-green-700 border border-green-200'
+                : theme === 'dark'
+                  ? 'bg-red-900/20 text-red-400 border border-red-800'
+                  : 'bg-red-50 text-red-700 border border-red-200'
             }`}>
               <CheckCircleIcon className="h-4 w-4 mr-2" />
               <span className="text-sm">{saveMessage.text}</span>
@@ -986,7 +1110,11 @@ const SettingsPage: React.FC = () => {
                     className={`w-full flex items-center space-x-2 p-3 rounded-lg transition-all text-sm ${
                       activeTab === tab.id 
                         ? 'bg-blue-600 text-white shadow' 
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        : `${
+                            theme === 'dark'
+                              ? 'text-gray-400 hover:bg-gray-800'
+                              : 'text-gray-600 hover:bg-gray-100'
+                          }`
                     }`}
                   >
                     <tab.icon className="h-4 w-4" />
@@ -994,7 +1122,9 @@ const SettingsPage: React.FC = () => {
                   </button>
                 ))}
                 
-                <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className={`pt-4 mt-4 border-t ${
+                  theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+                }`}>
                   <button
                     onClick={handleSaveSettings}
                     disabled={saving}
@@ -1014,9 +1144,17 @@ const SettingsPage: React.FC = () => {
             <div className="lg:col-span-10 space-y-4 pb-8">
               {/* NOTIFICATIONS TAB */}
               {activeTab === 'notifications' && (
-                <section className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                    <BellIcon className="h-5 w-5 mr-2 text-blue-600 dark:text-blue-400" />
+                <section className={`border rounded-lg p-4 md:p-6 ${
+                  theme === 'dark'
+                    ? 'bg-gray-800 border-gray-700'
+                    : 'bg-white border-gray-200'
+                }`}>
+                  <h3 className={`text-lg font-semibold mb-4 flex items-center ${
+                    theme === 'dark' ? 'text-white' : 'text-gray-900'
+                  }`}>
+                    <BellIcon className={`h-5 w-5 mr-2 ${
+                      theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                    }`} />
                     Communication Preferences
                   </h3>
                   <div className="space-y-3">
@@ -1025,10 +1163,22 @@ const SettingsPage: React.FC = () => {
                       { key: 'pushNotifications', label: 'Desktop Push', sub: 'Real-time browser notifications' },
                       { key: 'soundEnabled', label: 'Auditory Feedback', sub: 'Play sounds on new alerts' }
                     ].map((item) => (
-                      <div key={item.key} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-500/50 transition-colors">
+                      <div key={item.key} className={`flex items-center justify-between p-3 rounded-lg border ${
+                        theme === 'dark'
+                          ? 'border-gray-700 hover:border-blue-500/50'
+                          : 'border-gray-200 hover:border-blue-500/50'
+                      } transition-colors`}>
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-white text-sm">{item.label}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{item.sub}</p>
+                          <p className={`font-medium text-sm ${
+                            theme === 'dark' ? 'text-white' : 'text-gray-900'
+                          }`}>
+                            {item.label}
+                          </p>
+                          <p className={`text-xs ${
+                            theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                          }`}>
+                            {item.sub}
+                          </p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input 
@@ -1037,7 +1187,11 @@ const SettingsPage: React.FC = () => {
                             checked={(notificationSettings as any)[item.key]} 
                             onChange={(e) => setNotificationSettings(p => ({...p, [item.key]: e.target.checked}))} 
                           />
-                          <div className="w-10 h-5 bg-gray-300 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+                          <div className={`w-10 h-5 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all ${
+                            theme === 'dark' 
+                              ? 'bg-gray-700 peer-focus:outline-none' 
+                              : 'bg-gray-300 peer-focus:outline-none'
+                          }`}></div>
                         </label>
                       </div>
                     ))}
@@ -1047,14 +1201,26 @@ const SettingsPage: React.FC = () => {
 
               {/* PROFILE TAB */}
               {activeTab === 'profile' && (
-                <section className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6">
+                <section className={`border rounded-lg p-4 md:p-6 ${
+                  theme === 'dark'
+                    ? 'bg-gray-800 border-gray-700'
+                    : 'bg-white border-gray-200'
+                }`}>
                   <div className="flex items-center space-x-4 mb-6">
                     <div className="h-12 w-12 rounded-xl bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-xl font-bold text-white">
                       {user?.name?.charAt(0) || 'A'}
                     </div>
                     <div>
-                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{user?.name || 'User'}</h4>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm">{user?.email}</p>
+                      <h4 className={`text-lg font-semibold ${
+                        theme === 'dark' ? 'text-white' : 'text-gray-900'
+                      }`}>
+                        {user?.name || 'User'}
+                      </h4>
+                      <p className={`text-sm ${
+                        theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        {user?.email}
+                      </p>
                       <div className="mt-2">
                         {renderRoleBadge(user?.role || 'USER')}
                       </div>
@@ -1089,17 +1255,29 @@ const SettingsPage: React.FC = () => {
                   {/* Quick Actions */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Create User Card */}
-                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-all">
+                    <div className={`border rounded-lg p-4 hover:shadow-md transition-all ${
+                      theme === 'dark'
+                        ? 'bg-gray-800 border-gray-700'
+                        : 'bg-white border-gray-200'
+                    }`}>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center">
-                          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3">
-                            <UserPlusIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                          <div className={`p-2 rounded-lg mr-3 ${
+                            theme === 'dark' ? 'bg-blue-900/30' : 'bg-blue-100'
+                          }`}>
+                            <UserPlusIcon className={`h-5 w-5 ${
+                              theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                            }`} />
                           </div>
                           <div>
-                            <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
+                            <h4 className={`font-semibold text-sm ${
+                              theme === 'dark' ? 'text-white' : 'text-gray-900'
+                            }`}>
                               Create New User
                             </h4>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                            <p className={`text-xs mt-0.5 ${
+                              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                            }`}>
                               Add regular user accounts
                             </p>
                           </div>
@@ -1112,24 +1290,38 @@ const SettingsPage: React.FC = () => {
                           <PlusIcon className="h-4 w-4" />
                         </button>
                       </div>
-                      <p className="text-gray-600 dark:text-gray-400 text-xs">
+                      <p className={`text-xs ${
+                        theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
                         Create user accounts with basic access permissions and email verification.
                       </p>
                     </div>
 
                     {/* Create Admin Card (Super Admin Only) */}
                     {isUserSuperAdmin() && (
-                      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-all">
+                      <div className={`border rounded-lg p-4 hover:shadow-md transition-all ${
+                        theme === 'dark'
+                          ? 'bg-gray-800 border-gray-700'
+                          : 'bg-white border-gray-200'
+                      }`}>
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center">
-                            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg mr-3">
-                              <ShieldCheckIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                            <div className={`p-2 rounded-lg mr-3 ${
+                              theme === 'dark' ? 'bg-green-900/30' : 'bg-green-100'
+                            }`}>
+                              <ShieldCheckIcon className={`h-5 w-5 ${
+                                theme === 'dark' ? 'text-green-400' : 'text-green-600'
+                              }`} />
                             </div>
                             <div>
-                              <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
+                              <h4 className={`font-semibold text-sm ${
+                                theme === 'dark' ? 'text-white' : 'text-gray-900'
+                              }`}>
                                 Create Administrator
                               </h4>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                              <p className={`text-xs mt-0.5 ${
+                                theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                              }`}>
                                 Add elevated access accounts
                               </p>
                             </div>
@@ -1142,7 +1334,9 @@ const SettingsPage: React.FC = () => {
                             <PlusIcon className="h-4 w-4" />
                           </button>
                         </div>
-                        <p className="text-gray-600 dark:text-gray-400 text-xs">
+                        <p className={`text-xs ${
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
                           Create admin or super admin accounts with full system access.
                         </p>
                       </div>
@@ -1150,14 +1344,28 @@ const SettingsPage: React.FC = () => {
                   </div>
 
                   {/* User Management Section */}
-                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                  <div className={`border rounded-lg overflow-hidden ${
+                    theme === 'dark'
+                      ? 'bg-gray-800 border-gray-700'
+                      : 'bg-white border-gray-200'
+                  }`}>
                     {/* Search and Filters */}
-                    <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <div className={`p-4 border-b ${
+                      theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
+                    }`}>
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
-                        <h4 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center">
-                          <UsersIcon className="h-4 w-4 mr-2 text-blue-600 dark:text-blue-400" />
+                        <h4 className={`font-semibold text-sm flex items-center ${
+                          theme === 'dark' ? 'text-white' : 'text-gray-900'
+                        }`}>
+                          <UsersIcon className={`h-4 w-4 mr-2 ${
+                            theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                          }`} />
                           User Management
-                          <span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
+                          <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${
+                            theme === 'dark'
+                              ? 'bg-blue-900/30 text-blue-400'
+                              : 'bg-blue-100 text-blue-600'
+                          }`}>
                             {filteredUsers.length} users
                           </span>
                         </h4>
@@ -1170,7 +1378,11 @@ const SettingsPage: React.FC = () => {
                               placeholder="Search users..."
                               value={searchTerm}
                               onChange={(e) => setSearchTerm(e.target.value)}
-                              className="pl-9 pr-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm w-full"
+                              className={`pl-9 pr-3 py-1.5 border rounded text-sm w-full ${
+                                theme === 'dark'
+                                  ? 'bg-gray-700 border-gray-600 text-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500'
+                                  : 'bg-white border-gray-300 text-gray-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500'
+                              }`}
                             />
                           </div>
                           
@@ -1179,7 +1391,11 @@ const SettingsPage: React.FC = () => {
                             <select
                               value={roleFilter}
                               onChange={(e) => setRoleFilter(e.target.value)}
-                              className="pl-9 pr-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm appearance-none"
+                              className={`pl-9 pr-3 py-1.5 border rounded text-sm appearance-none ${
+                                theme === 'dark'
+                                  ? 'bg-gray-700 border-gray-600 text-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500'
+                                  : 'bg-white border-gray-300 text-gray-900 focus:ring-1 focus:ring-blue-500 focus:border-blue-500'
+                              }`}
                             >
                               <option value="all">All Roles</option>
                               <option value="user">Users</option>
@@ -1195,10 +1411,18 @@ const SettingsPage: React.FC = () => {
                     {isLoading ? (
                       <div className="py-8 flex flex-col items-center justify-center">
                         <div className="animate-spin h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full mb-3"></div>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">Loading users...</p>
+                        <p className={`text-sm ${
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                        }`}>
+                          Loading users...
+                        </p>
                       </div>
                     ) : error ? (
-                      <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded m-4 border border-red-200 dark:border-red-800">
+                      <div className={`p-4 rounded m-4 border ${
+                        theme === 'dark'
+                          ? 'bg-red-900/20 text-red-400 border-red-800'
+                          : 'bg-red-50 text-red-700 border-red-200'
+                      }`}>
                         <p className="flex items-center text-sm">
                           <ExclamationCircleIcon className="h-4 w-4 mr-2" />
                           {error}
@@ -1206,7 +1430,9 @@ const SettingsPage: React.FC = () => {
                         {error.includes('403') && (
                           <button 
                             onClick={() => window.location.reload()}
-                            className="mt-2 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                            className={`mt-2 text-xs hover:underline ${
+                              theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                            }`}
                           >
                             Refresh page and try again
                           </button>
@@ -1215,7 +1441,9 @@ const SettingsPage: React.FC = () => {
                     ) : filteredUsers.length === 0 ? (
                       <div className="text-center py-8">
                         <UsersIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">
+                        <p className={`text-sm ${
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                        }`}>
                           {searchTerm || roleFilter !== 'all' 
                             ? 'No users match your search criteria'
                             : 'No users found'
@@ -1227,7 +1455,9 @@ const SettingsPage: React.FC = () => {
                               setSearchTerm('');
                               setRoleFilter('all');
                             }}
-                            className="mt-2 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                            className={`mt-2 text-xs hover:underline ${
+                              theme === 'dark' ? 'text-blue-400' : 'text-blue-600'
+                            }`}
                           >
                             Clear filters
                           </button>
@@ -1235,8 +1465,14 @@ const SettingsPage: React.FC = () => {
                       </div>
                     ) : (
                       <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                          <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <table className={`w-full text-sm text-left ${
+                          theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                        }`}>
+                          <thead className={`text-xs uppercase ${
+                            theme === 'dark' 
+                              ? 'bg-gray-700 text-gray-400' 
+                              : 'bg-gray-50 text-gray-700'
+                          }`}>
                             <tr>
                               <th scope="col" className="px-3 py-2">ID</th>
                               <th scope="col" className="px-3 py-2">User</th>
@@ -1255,7 +1491,11 @@ const SettingsPage: React.FC = () => {
                   </div>
 
                   {/* Permissions Info */}
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 p-3 rounded-lg text-xs">
+                  <div className={`border p-3 rounded-lg text-xs ${
+                    theme === 'dark'
+                      ? 'bg-blue-900/20 border-blue-800 text-blue-400'
+                      : 'bg-blue-50 border-blue-200 text-blue-700'
+                  }`}>
                     <div className="flex items-start">
                       <ShieldCheckIcon className="h-4 w-4 mr-2 mt-0.5 shrink-0" />
                       <div>
