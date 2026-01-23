@@ -23,7 +23,9 @@ import {
   EnvelopeIcon,
   XMarkIcon,
   KeyIcon,
-  SparklesIcon
+  SparklesIcon,
+  PencilIcon,
+  ClockIcon
 } from '@heroicons/react/24/outline';
 
 // Types
@@ -71,10 +73,10 @@ const SettingsPage: React.FC = () => {
     notificationFrequency: 'immediate'
   });
 
-  // API Base URL - FIXED: Backend runs on port 3001
-  const API_BASE_URL = import.meta.env.VITE_API_URL;
+  // API Base URL
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-  // Helper functions for role checks - FIXED: Handle both uppercase and lowercase
+  // Helper functions for role checks
   const isUserAdmin = () => {
     const role = user?.role || '';
     return role === 'ADMIN' || role === 'SUPERADMIN' || 
@@ -91,14 +93,14 @@ const SettingsPage: React.FC = () => {
     { id: 'profile', label: 'Profile', icon: UserIcon }
   ];
 
-  // Add admin tab if user is admin - FIXED: Use helper function
+  // Add admin tab if user is admin
   if (isUserAdmin()) {
     tabs.push({ id: 'admin', label: 'Admin', icon: ShieldCheckIcon });
   }
 
   // ========== REAL API FUNCTIONS ==========
 
-  // 1. FETCH USERS FROM BACKEND - FIXED: Use correct API URL
+  // 1. FETCH USERS FROM BACKEND
   const fetchUsers = async () => {
     if (!token) {
       console.log('❌ No token available');
@@ -179,76 +181,59 @@ const SettingsPage: React.FC = () => {
     }
   };
 
-  // 2. CREATE USER - FIXED: Use correct API URL
-  // Update your createUser function to log more details
-const createUser = async (userData: typeof formData) => {
-  if (!token) {
-    toast.error('Please login first');
-    return;
-  }
-
-  try {
-    console.log('📤 Creating user:', userData.email);
-    console.log('🔐 Using token:', token.substring(0, 30) + '...');
-    
-    // Decode and log the token payload
-    const tokenParts = token.split('.');
-    if (tokenParts.length === 3) {
-      try {
-        const payload = JSON.parse(atob(tokenParts[1]));
-        console.log('🔐 Current user role from JWT:', payload.role);
-        console.log('🔐 Current user ID:', payload.sub);
-      } catch (e) {
-        console.error('Failed to decode token:', e);
-      }
+  // 2. CREATE USER
+  const createUser = async (userData: typeof formData) => {
+    if (!token) {
+      toast.error('Please login first');
+      return;
     }
-    
-    const response = await fetch(`${API_BASE_URL}/admin/users`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        email: userData.email,
-        name: userData.name,
-        password: userData.password,
-        role: userData.role.toLowerCase()
-      })
-    });
-    
-    console.log('📡 Response status:', response.status);
-    console.log('📡 Response headers:', Object.fromEntries([...response.headers]));
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Full error response:', errorText);
+
+    try {
+      console.log('📤 Creating user:', userData.email);
       
-      // Try to parse JSON error
-      try {
-        const errorData = JSON.parse(errorText);
-        console.error('❌ Parsed error:', errorData);
-        throw new Error(errorData.message || errorData.error || `Failed to create user: ${response.status}`);
-      } catch {
-        throw new Error(`Failed to create user: ${response.status} ${response.statusText}\n${errorText}`);
+      const response = await fetch(`${API_BASE_URL}/admin/users`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: userData.email,
+          name: userData.name,
+          password: userData.password,
+          role: userData.role.toLowerCase()
+        })
+      });
+      
+      console.log('📡 Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Full error response:', errorText);
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.message || errorData.error || `Failed to create user: ${response.status}`);
+        } catch {
+          throw new Error(`Failed to create user: ${response.status} ${response.statusText}\n${errorText}`);
+        }
       }
+      
+      const responseData = await response.json();
+      console.log('✅ User created:', responseData);
+      
+      toast.success('User created successfully!');
+      fetchUsers(); // Refresh list
+      return responseData;
+      
+    } catch (error: any) {
+      console.error('❌ Error creating user:', error);
+      toast.error(error.message || 'Failed to create user');
+      throw error;
     }
-    
-    const responseData = await response.json();
-    console.log('✅ User created:', responseData);
-    
-    toast.success('User created successfully!');
-    fetchUsers(); // Refresh list
-    return responseData;
-    
-  } catch (error: any) {
-    console.error('❌ Error creating user:', error);
-    toast.error(error.message || 'Failed to create user');
-    throw error;
-  }
-};
+  };
 
-  // 3. CREATE ADMIN - FIXED: Use correct API URL
+  // 3. CREATE ADMIN
   const createAdmin = async (adminData: typeof formData) => {
     if (!token) {
       toast.error('Please login first');
@@ -268,7 +253,7 @@ const createUser = async (userData: typeof formData) => {
           email: adminData.email,
           name: adminData.name,
           password: adminData.password,
-          role: adminData.role.toLowerCase() // Backend expects lowercase
+          role: adminData.role.toLowerCase()
         })
       });
       
@@ -278,7 +263,6 @@ const createUser = async (userData: typeof formData) => {
         const errorText = await response.text();
         console.error('❌ Error response:', errorText);
         
-        // Try to parse JSON error
         try {
           const errorData = JSON.parse(errorText);
           throw new Error(errorData.message || errorData.error || 'Failed to create admin');
@@ -301,7 +285,7 @@ const createUser = async (userData: typeof formData) => {
     }
   };
 
-  // 4. UPDATE USER ROLE - FIXED: Use correct API URL
+  // 4. UPDATE USER ROLE
   const updateUserRole = async (userId: string, role: 'USER' | 'ADMIN' | 'SUPERADMIN') => {
     if (!token) {
       toast.error('Please login first');
@@ -317,7 +301,7 @@ const createUser = async (userData: typeof formData) => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ role: role.toLowerCase() }) // Backend expects lowercase
+        body: JSON.stringify({ role: role.toLowerCase() })
       });
       
       console.log('📡 Response status:', response.status);
@@ -338,79 +322,79 @@ const createUser = async (userData: typeof formData) => {
       console.error('❌ Error updating role:', error);
       toast.error(error.message || 'Failed to update role');
     }
-  }; 
+  };
 
+  // 5. SEND VERIFICATION EMAIL
   const verifyUser = async (userId: string) => {
-  if (!token) {
-    toast.error('Please login first');
-    return;
-  }
-
-  try {
-    console.log('📤 Verifying user:', userId);
-    
-    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/send-verification`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    console.log('📡 Response status:', response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Error response:', errorText);
-      throw new Error(`Failed to verify user: ${response.status}`);
+    if (!token) {
+      toast.error('Please login first');
+      return;
     }
-    
-    toast.success('Verification email sent!');
-    fetchUsers(); // Refresh list
-    
-  } catch (error: any) {
-    console.error('❌ Error verifying user:', error);
-    toast.error(error.message || 'Failed to verify user');
-  }
-};
 
-// Add a direct verify function (without sending email)
-const markUserAsVerified = async (userId: string) => {
-  if (!token) {
-    toast.error('Please login first');
-    return;
-  }
-
-  try {
-    console.log('📤 Marking user as verified:', userId);
-    
-    // You need to create this endpoint in your backend
-    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/verify`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+    try {
+      console.log('📤 Verifying user:', userId);
+      
+      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/send-verification`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('📡 Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
+        throw new Error(`Failed to verify user: ${response.status}`);
       }
-    });
-    
-    console.log('📡 Response status:', response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Error response:', errorText);
-      throw new Error(`Failed to mark user as verified: ${response.status}`);
+      
+      toast.success('Verification email sent!');
+      fetchUsers();
+      
+    } catch (error: any) {
+      console.error('❌ Error verifying user:', error);
+      toast.error(error.message || 'Failed to verify user');
     }
-    
-    toast.success('User marked as verified!');
-    fetchUsers(); // Refresh list
-    
-  } catch (error: any) {
-    console.error('❌ Error marking user as verified:', error);
-    toast.error(error.message || 'Failed to verify user');
-  }
-};
+  };
 
-  // 5. DELETE USER - FIXED: Use correct API URL
+  // 6. MARK USER AS VERIFIED
+  const markUserAsVerified = async (userId: string) => {
+    if (!token) {
+      toast.error('Please login first');
+      return;
+    }
+
+    try {
+      console.log('📤 Marking user as verified:', userId);
+      
+      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/verify`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('📡 Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
+        throw new Error(`Failed to mark user as verified: ${response.status}`);
+      }
+      
+      toast.success('User marked as verified!');
+      fetchUsers();
+      
+    } catch (error: any) {
+      console.error('❌ Error marking user as verified:', error);
+      toast.error(error.message || 'Failed to verify user');
+    }
+  };
+
+  // 7. DELETE USER
   const deleteUser = async (userId: string) => {
     if (!token) {
       toast.error('Please login first');
@@ -443,7 +427,7 @@ const markUserAsVerified = async (userId: string) => {
       console.log('✅ User deleted');
       
       toast.success('User deleted successfully!');
-      fetchUsers(); // Refresh list
+      fetchUsers();
       
     } catch (error: any) {
       console.error('❌ Error deleting user:', error);
@@ -469,11 +453,24 @@ const markUserAsVerified = async (userId: string) => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+      return 'Today';
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    }
   };
 
   // Filter users based on search and role filter
@@ -544,19 +541,21 @@ const markUserAsVerified = async (userId: string) => {
   };
 
   // ========== RENDER FUNCTIONS ==========
-  const renderRoleBadge = (role: string) => {
+  const renderRoleBadge = (role: string, isCompact: boolean = false) => {
     const roleLower = role.toLowerCase();
+    const colors = {
+      superadmin: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
+      admin: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+      user: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+    };
+    
+    const text = roleLower === 'superadmin' ? 'Super Admin' : 
+                 roleLower === 'admin' ? 'Admin' : 'User';
+    
     return (
-      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-        roleLower === 'superadmin' 
-          ? 'bg-purple-500/10 text-purple-500' 
-          : roleLower === 'admin'
-            ? 'bg-blue-500/10 text-blue-500'
-            : 'bg-secondary/10 text-secondary'
-      }`}>
-        <ShieldCheckIcon className="h-3 w-3 mr-1" />
-        {roleLower === 'superadmin' ? 'Super Admin' : 
-         roleLower === 'admin' ? 'Admin' : 'User'}
+      <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${colors[roleLower as keyof typeof colors]}`}>
+        {!isCompact && <ShieldCheckIcon className="h-3 w-3 mr-1" />}
+        {text}
       </span>
     );
   };
@@ -566,47 +565,68 @@ const markUserAsVerified = async (userId: string) => {
     const isCurrentUser = currentUserId === userItem.id;
     
     return (
-      <tr key={userItem.id} className="border-b border-color hover:bg-hover/30 transition-colors">
-        <td className="p-4">
-          <div className="flex items-center space-x-3">
-            <div className="h-10 w-10 rounded-xl bg-linear-to-tr from-blue-600 to-blue-600 flex items-center justify-center text-white font-bold">
+      <tr key={userItem.id} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+        {/* ID */}
+        <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 font-mono">
+          #{userItem.id.substring(0, 8)}...
+        </td>
+        
+        {/* User Info */}
+        <td className="px-3 py-2">
+          <div className="flex items-center">
+            <div className="h-6 w-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold mr-2">
               {userItem.name.charAt(0).toUpperCase()}
             </div>
-            <div>
-              <p className="font-medium text-primary">{userItem.name}</p>
-              <p className="text-sm text-secondary">{userItem.email}</p>
+            <div className="min-w-0">
+              <div className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[150px]">
+                {userItem.name}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[150px]">
+                {userItem.email}
+              </div>
             </div>
           </div>
         </td>
-        <td className="p-4">{renderRoleBadge(userItem.role)}</td>
-        <td className="p-4">
+        
+        {/* Role */}
+        <td className="px-3 py-2">
+          {renderRoleBadge(userItem.role, true)}
+        </td>
+        
+        {/* Status */}
+        <td className="px-3 py-2">
           <div className="flex items-center">
             {userItem.isVerified ? (
-              <div className="flex items-center text-green-500">
-                <CheckCircleIcon className="h-5 w-5 mr-2" />
-                <span>Verified</span>
-              </div>
+              <span className="inline-flex items-center text-green-600 dark:text-green-400 text-xs">
+                <CheckCircleIcon className="h-3 w-3 mr-1" />
+                Verified
+              </span>
             ) : (
-              <div className="flex items-center text-yellow-500">
-                <div className="h-5 w-5 rounded-full border-2 border-yellow-500 mr-2 flex items-center justify-center">
-                  <span className="text-xs">!</span>
-                </div>
-                <span>Pending</span>
-              </div>
+              <span className="inline-flex items-center text-amber-600 dark:text-amber-400 text-xs">
+                <ClockIcon className="h-3 w-3 mr-1" />
+                Pending
+              </span>
             )}
           </div>
         </td>
-        <td className="p-4 text-secondary text-sm">
-          {formatDate(userItem.createdAt)}
+        
+        {/* Created */}
+        <td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center">
+            <ClockIcon className="h-3 w-3 mr-1" />
+            {formatDate(userItem.createdAt)}
+          </div>
         </td>
-        <td className="p-4">
-          <div className="flex items-center space-x-2">
+        
+        {/* Actions */}
+        <td className="px-3 py-2">
+          <div className="flex items-center space-x-1">
             {/* Change Role (Super Admin only, can't modify self) */}
             {isUserSuperAdmin() && !isCurrentUser && (
               <select
                 value={userItem.role}
                 onChange={(e) => updateUserRole(userItem.id, e.target.value as 'USER' | 'ADMIN' | 'SUPERADMIN')}
-                className="bg-primary border border-color rounded-lg px-3 py-1.5 text-sm text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs text-gray-700 dark:text-gray-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                 disabled={isCurrentUser}
               >
                 <option value="USER">User</option>
@@ -615,77 +635,34 @@ const markUserAsVerified = async (userId: string) => {
               </select>
             )}
 
-            // Add this section to your admin tab
-{isUserSuperAdmin() && (
-  <div className="bg-card border border-color rounded-2xl p-6">
-    <h4 className="font-bold text-lg text-primary mb-4 flex items-center">
-      <CheckCircleIcon className="h-5 w-5 mr-2 text-green-500" />
-      User Verification Management
-    </h4>
-    
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {/* Send verification to all unverified */}
-      <button
-        onClick={async () => {
-          const unverifiedUsers = users.filter(u => !u.isVerified);
-          if (unverifiedUsers.length === 0) {
-            toast.success('All users are already verified!');
-            return;
-          }
-          
-          if (confirm(`Send verification emails to ${unverifiedUsers.length} unverified users?`)) {
-            for (const user of unverifiedUsers) {
-              await verifyUser(user.id);
-              await new Promise(resolve => setTimeout(resolve, 500)); // Delay between emails
-            }
-            toast.success(`Verification emails sent to ${unverifiedUsers.length} users!`);
-          }
-        }}
-        className="p-4 border border-color rounded-xl hover:border-blue-500 transition-colors flex items-center justify-between"
-      >
-        <div>
-          <p className="font-medium text-primary">Send to All Unverified</p>
-          <p className="text-sm text-secondary">Email all pending users</p>
-        </div>
-        <EnvelopeIcon className="h-5 w-5 text-blue-500" />
-      </button>
-      
-      {/* Mark all as verified */}
-      <button
-        onClick={async () => {
-          const unverifiedUsers = users.filter(u => !u.isVerified);
-          if (unverifiedUsers.length === 0) {
-            toast.success('All users are already verified!');
-            return;
-          }
-          
-          if (confirm(`Mark ${unverifiedUsers.length} users as verified without email?`)) {
-            // This would require the backend endpoint from Method 3
-           toast('This feature requires backend implementation', {
-  icon: 'ℹ️',
-  duration: 4000
-});
-          }
-        }}
-        className="p-4 border border-color rounded-xl hover:border-green-500 transition-colors flex items-center justify-between"
-      >
-        <div>
-          <p className="font-medium text-primary">Verify All Instantly</p>
-          <p className="text-sm text-secondary">Mark all as verified</p>
-        </div>
-        <CheckCircleIcon className="h-5 w-5 text-green-500" />
-      </button>
-    </div>
-  </div>
-)}
+            {/* Verify Button */}
+            {!userItem.isVerified && isUserAdmin() && (
+              <button
+                onClick={() => markUserAsVerified(userItem.id)}
+                className="p-1 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
+                title="Mark as Verified"
+              >
+                <CheckCircleIcon className="h-4 w-4" />
+              </button>
+            )}
+
+            {/* Resend Verification */}
+            {!userItem.isVerified && isUserAdmin() && (
+              <button
+                onClick={() => verifyUser(userItem.id)}
+                className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+                title="Resend Verification Email"
+              >
+                <EnvelopeIcon className="h-4 w-4" />
+              </button>
+            )}
 
             {/* Delete User (Super Admin only, can't delete self) */}
             {isUserSuperAdmin() && !isCurrentUser && (
               <button
                 onClick={() => deleteUser(userItem.id)}
-                className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                 title="Delete User"
-                disabled={isCurrentUser}
               >
                 <TrashIcon className="h-4 w-4" />
               </button>
@@ -710,9 +687,9 @@ const markUserAsVerified = async (userId: string) => {
 
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div className="bg-card w-full max-w-md rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-color">
+        <div className="bg-white dark:bg-gray-800 w-full max-w-md rounded-xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-gray-200 dark:border-gray-700">
           {/* Modal Header */}
-          <div className={`px-6 py-4 border-b border-color flex justify-between items-center bg-linear-to-r ${headerGradient} text-white`}>
+          <div className={`px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r ${headerGradient} text-white`}>
             <div className="flex items-center">
               <div className="p-2 bg-white/20 rounded-lg mr-3">
                 {isAdmin ? (
@@ -722,23 +699,23 @@ const markUserAsVerified = async (userId: string) => {
                 )}
               </div>
               <div>
-                <h2 className="text-xl font-bold">{title}</h2>
-                <p className="text-blue-100 text-sm">{description}</p>
+                <h2 className="text-lg font-bold">{title}</h2>
+                <p className="text-blue-100 text-xs">{description}</p>
               </div>
             </div>
             <button 
               onClick={() => setModalOpen(false)}
-              className="p-2 hover:bg-white/20 rounded-full transition-colors"
+              className="p-1 hover:bg-white/20 rounded transition-colors"
             >
-              <XMarkIcon className="h-6 w-6" />
+              <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
           
           {/* Modal Content */}
-          <div className="p-6 space-y-6 overflow-y-auto">
+          <div className="p-4 space-y-4 overflow-y-auto">
             {/* Email Field */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-primary">
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white">
                 <span className="flex items-center">
                   Email Address
                   <span className="ml-1 text-red-500">*</span>
@@ -746,22 +723,22 @@ const markUserAsVerified = async (userId: string) => {
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <EnvelopeIcon className="h-5 w-5 text-secondary" />
+                  <EnvelopeIcon className="h-4 w-4 text-gray-400" />
                 </div>
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                   placeholder={isAdmin ? "admin@example.com" : "user@example.com"}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-color bg-primary text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className="w-full pl-10 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm"
                   autoFocus
                 />
               </div>
             </div>
             
             {/* Name Field */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-primary">
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white">
                 <span className="flex items-center">
                   Full Name
                   <span className="ml-1 text-red-500">*</span>
@@ -769,21 +746,21 @@ const markUserAsVerified = async (userId: string) => {
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <UserIcon className="h-5 w-5 text-secondary" />
+                  <UserIcon className="h-4 w-4 text-gray-400" />
                 </div>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                   placeholder={isAdmin ? "Admin User" : "John Doe"}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-color bg-primary text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className="w-full pl-10 pr-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
               </div>
             </div>
             
             {/* Password Field */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-primary">
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white">
                 <span className="flex items-center">
                   Password
                   <span className="ml-1 text-red-500">*</span>
@@ -791,29 +768,29 @@ const markUserAsVerified = async (userId: string) => {
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <KeyIcon className="h-5 w-5 text-secondary" />
+                  <KeyIcon className="h-4 w-4 text-gray-400" />
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-12 py-3 rounded-xl border border-color bg-primary text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  className="w-full pl-10 pr-10 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-secondary hover:text-primary transition-colors"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
                   {showPassword ? (
-                    <EyeSlashIcon className="h-5 w-5" />
+                    <EyeSlashIcon className="h-4 w-4" />
                   ) : (
-                    <EyeIcon className="h-5 w-5" />
+                    <EyeIcon className="h-4 w-4" />
                   )}
                 </button>
               </div>
-              <div className="flex items-center mt-2">
-                <div className="h-1 flex-1 bg-secondary/20 rounded-full overflow-hidden">
+              <div className="flex items-center mt-1">
+                <div className="h-1 flex-1 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div 
                     className={`h-full rounded-full transition-all duration-300 ${
                       formData.password.length >= 12 ? 'bg-green-500' :
@@ -823,49 +800,49 @@ const markUserAsVerified = async (userId: string) => {
                     style={{ width: `${Math.min((formData.password.length / 12) * 100, 100)}%` }}
                   ></div>
                 </div>
-                <span className="text-xs text-secondary ml-3">
+                <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
                   {formData.password.length >= 12 ? 'Strong' :
                    formData.password.length >= 8 ? 'Good' :
                    formData.password.length > 0 ? 'Weak' : ''}
                 </span>
               </div>
-              <p className="text-xs text-secondary mt-1">
-                Minimum 8 characters with letters and numbers
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Minimum 8 characters
               </p>
             </div>
             
             {/* Role Selection (Admin creation only) */}
             {isAdmin && (
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-primary">
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white">
                   <span className="flex items-center">
                     Admin Role
                     <span className="ml-1 text-red-500">*</span>
                   </span>
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   {(['ADMIN', 'SUPERADMIN'] as const).map((role) => (
                     <button
                       key={role}
                       type="button"
                       onClick={() => setFormData({...formData, role})}
-                      className={`p-4 rounded-xl border transition-all ${
+                      className={`p-3 rounded-lg border transition-all text-sm ${
                         formData.role === role
-                          ? 'bg-linear-to-r from-green-500 to-emerald-600 text-white border-green-600 shadow-lg'
-                          : 'border-color text-secondary hover:bg-hover hover:border-green-500/50'
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white border-green-600 shadow'
+                          : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                       }`}
                     >
                       <div className="flex flex-col items-center">
                         {role === 'SUPERADMIN' ? (
-                          <ShieldCheckIcon className="h-6 w-6 mb-2" />
+                          <ShieldCheckIcon className="h-5 w-5 mb-1" />
                         ) : (
-                          <UserGroupIcon className="h-6 w-6 mb-2" />
+                          <UserGroupIcon className="h-5 w-5 mb-1" />
                         )}
                         <span className="font-medium">
                           {role === 'SUPERADMIN' ? 'Super Admin' : 'Admin'}
                         </span>
-                        <span className="text-xs opacity-75 mt-1">
-                          {role === 'SUPERADMIN' ? 'Full system access' : 'Limited admin access'}
+                        <span className="text-xs opacity-75 mt-0.5">
+                          {role === 'SUPERADMIN' ? 'Full access' : 'Limited access'}
                         </span>
                       </div>
                     </button>
@@ -875,57 +852,57 @@ const markUserAsVerified = async (userId: string) => {
             )}
             
             {/* Permissions Info Box */}
-            <div className={`${isAdmin ? 'bg-green-500/10 border-green-500/20' : 'bg-blue-500/10 border-blue-500/20'} rounded-xl p-4`}>
+            <div className={`${isAdmin ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'} rounded-lg p-3 border`}>
               <div className="flex items-start">
-                <ShieldCheckIcon className={`h-5 w-5 mr-2 mt-0.5 shrink-0 ${isAdmin ? 'text-green-500' : 'text-blue-500'}`} />
+                <ShieldCheckIcon className={`h-4 w-4 mr-2 mt-0.5 shrink-0 ${isAdmin ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'}`} />
                 <div>
-                  <p className="text-sm font-medium text-primary mb-1">
+                  <p className="text-xs font-medium text-gray-900 dark:text-white mb-1">
                     {isAdmin ? 'Admin Permissions' : 'User Permissions'}
                   </p>
-                  <ul className="text-xs text-secondary space-y-1">
+                  <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
                     {isAdmin ? (
                       <>
                         <li className="flex items-center">
-                          <CheckCircleIcon className="h-3 w-3 text-green-500 mr-2" />
+                          <CheckCircleIcon className="h-3 w-3 text-green-500 mr-1" />
                           Full dashboard access
                         </li>
                         <li className="flex items-center">
-                          <CheckCircleIcon className="h-3 w-3 text-green-500 mr-2" />
+                          <CheckCircleIcon className="h-3 w-3 text-green-500 mr-1" />
                           User management
                         </li>
                         {formData.role === 'SUPERADMIN' && (
                           <>
                             <li className="flex items-center">
-                              <CheckCircleIcon className="h-3 w-3 text-green-500 mr-2" />
+                              <CheckCircleIcon className="h-3 w-3 text-green-500 mr-1" />
                               Create other admins
                             </li>
                             <li className="flex items-center">
-                              <CheckCircleIcon className="h-3 w-3 text-green-500 mr-2" />
+                              <CheckCircleIcon className="h-3 w-3 text-green-500 mr-1" />
                               Full system control
                             </li>
                           </>
                         )}
                         <li className="flex items-center">
-                          <CheckCircleIcon className="h-3 w-3 text-green-500 mr-2" />
+                          <CheckCircleIcon className="h-3 w-3 text-green-500 mr-1" />
                           Auto-verified account
                         </li>
                       </>
                     ) : (
                       <>
                         <li className="flex items-center">
-                          <CheckCircleIcon className="h-3 w-3 text-green-500 mr-2" />
+                          <CheckCircleIcon className="h-3 w-3 text-green-500 mr-1" />
                           Basic dashboard access
                         </li>
                         <li className="flex items-center">
-                          <CheckCircleIcon className="h-3 w-3 text-green-500 mr-2" />
+                          <CheckCircleIcon className="h-3 w-3 text-green-500 mr-1" />
                           View notifications
                         </li>
                         <li className="flex items-center">
-                          <XCircleIcon className="h-3 w-3 text-red-500 mr-2" />
+                          <XCircleIcon className="h-3 w-3 text-red-500 mr-1" />
                           No admin privileges
                         </li>
                         <li className="flex items-center">
-                          <EnvelopeIcon className="h-3 w-3 text-blue-500 mr-2" />
+                          <EnvelopeIcon className="h-3 w-3 text-blue-500 mr-1" />
                           Email verification required
                         </li>
                       </>
@@ -937,19 +914,19 @@ const markUserAsVerified = async (userId: string) => {
           </div>
           
           {/* Modal Footer */}
-          <div className="px-6 py-4 border-t border-color flex justify-end space-x-3 bg-hover/30">
+          <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-2 bg-gray-50 dark:bg-gray-900/30">
             <button
               onClick={() => setModalOpen(false)}
-              className="px-5 py-2.5 border border-color text-primary rounded-xl font-medium hover:bg-hover transition-colors flex items-center"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm flex items-center"
             >
-              <XMarkIcon className="h-4 w-4 mr-2" />
+              <XMarkIcon className="h-4 w-4 mr-1" />
               Cancel
             </button>
             <button
               onClick={() => handleModalSubmit(isAdmin)}
-              className={`px-6 py-2.5 bg-linear-to-r ${buttonGradient} text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center shadow-lg hover:shadow-xl`}
+              className={`px-4 py-2 bg-gradient-to-r ${buttonGradient} text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center text-sm`}
             >
-              <SparklesIcon className="h-4 w-4 mr-2" />
+              <SparklesIcon className="h-4 w-4 mr-1" />
               {buttonText}
             </button>
           </div>
@@ -960,65 +937,71 @@ const markUserAsVerified = async (userId: string) => {
 
   // ========== MAIN RENDER ==========
   return (
-    <div className="h-screen flex overflow-hidden bg-primary">
+    <div className="h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
       <Sidebar />
 
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <header className="bg-card border-b border-color shrink-0 sticky top-0 z-20">
-          <div className="px-6 py-4">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shrink-0 sticky top-0 z-20">
+          <div className="px-4 md:px-6 py-3">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div>
-                <div className="flex items-center text-sm text-secondary mb-1">
-                  <ChevronRightIcon className="h-3 w-3 mx-2" />
-                  <span className="text-blue-600 font-medium">Settings</span>
+                <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Settings</h1>
+                <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <ChevronRightIcon className="h-3 w-3 mx-1" />
+                  <span className="text-blue-600 dark:text-blue-400 font-medium">
+                    {activeTab === 'notifications' ? 'Notifications' : 
+                     activeTab === 'profile' ? 'Profile' : 
+                     'Admin Panel'}
+                  </span>
                 </div>
               </div>
               
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3">
                 <ThemeSwitcher />
               </div>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto min-h-0 p-6">
+        <main className="flex-1 overflow-y-auto min-h-0 p-4 md:p-6">
           {saveMessage && (
-            <div className={`mb-6 p-4 rounded-xl flex items-center ${
+            <div className={`mb-4 p-3 rounded-lg flex items-center ${
               saveMessage.type === 'success' 
-                ? 'bg-green-500/10 text-green-500 border border-green-500/20' 
-                : 'bg-red-500/10 text-red-500 border border-red-500/20'
+                ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800' 
+                : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
             }`}>
-              <CheckCircleIcon className="h-5 w-5 mr-2" />
-              {saveMessage.text}
+              <CheckCircleIcon className="h-4 w-4 mr-2" />
+              <span className="text-sm">{saveMessage.text}</span>
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-3">
-              <nav className="space-y-2 lg:sticky lg:top-0">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left Navigation */}
+            <div className="lg:col-span-2">
+              <nav className="space-y-1 lg:sticky lg:top-6">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center space-x-3 p-3 rounded-xl transition-all ${
+                    className={`w-full flex items-center space-x-2 p-3 rounded-lg transition-all text-sm ${
                       activeTab === tab.id 
-                        ? 'bg-blue-600 text-white shadow-lg' 
-                        : 'text-secondary hover:bg-hover'
+                        ? 'bg-blue-600 text-white shadow' 
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
                   >
-                    <tab.icon className="h-5 w-5" />
+                    <tab.icon className="h-4 w-4" />
                     <span className="font-medium">{tab.label}</span>
                   </button>
                 ))}
                 
-                <div className="pt-4 mt-6 border-t border-color">
+                <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
                   <button
                     onClick={handleSaveSettings}
                     disabled={saving}
-                    className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center transition-all"
+                    className="w-full py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center transition-all text-sm"
                   >
                     {saving ? (
-                      <div className="animate-spin h-5 w-5 border-2 border-white/30 border-t-white rounded-full" />
+                      <div className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full" />
                     ) : (
                       'Save Changes'
                     )}
@@ -1027,24 +1010,25 @@ const markUserAsVerified = async (userId: string) => {
               </nav>
             </div>
 
-            <div className="lg:col-span-9 space-y-6 pb-12">
+            {/* Main Content Area */}
+            <div className="lg:col-span-10 space-y-4 pb-8">
               {/* NOTIFICATIONS TAB */}
               {activeTab === 'notifications' && (
-                <section className="bg-card border border-color rounded-2xl p-8">
-                  <h3 className="text-lg font-bold text-primary mb-6 flex items-center">
-                    <BellIcon className="h-5 w-5 mr-2 text-blue-600" />
+                <section className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <BellIcon className="h-5 w-5 mr-2 text-blue-600 dark:text-blue-400" />
                     Communication Preferences
                   </h3>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {[
                       { key: 'emailNotifications', label: 'Email Alerts', sub: 'Receive weekly summaries' },
                       { key: 'pushNotifications', label: 'Desktop Push', sub: 'Real-time browser notifications' },
                       { key: 'soundEnabled', label: 'Auditory Feedback', sub: 'Play sounds on new alerts' }
                     ].map((item) => (
-                      <div key={item.key} className="flex items-center justify-between p-4 rounded-xl border border-color hover:border-blue-500/50 transition-colors">
+                      <div key={item.key} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-blue-500/50 transition-colors">
                         <div>
-                          <p className="font-semibold text-primary">{item.label}</p>
-                          <p className="text-xs text-secondary">{item.sub}</p>
+                          <p className="font-medium text-gray-900 dark:text-white text-sm">{item.label}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{item.sub}</p>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input 
@@ -1053,7 +1037,7 @@ const markUserAsVerified = async (userId: string) => {
                             checked={(notificationSettings as any)[item.key]} 
                             onChange={(e) => setNotificationSettings(p => ({...p, [item.key]: e.target.checked}))} 
                           />
-                          <div className="w-11 h-6 bg-gray-300 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                          <div className="w-10 h-5 bg-gray-300 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
                         </label>
                       </div>
                     ))}
@@ -1063,16 +1047,16 @@ const markUserAsVerified = async (userId: string) => {
 
               {/* PROFILE TAB */}
               {activeTab === 'profile' && (
-                <section className="bg-card border border-color rounded-2xl p-8">
-                  <div className="flex items-center space-x-6 mb-8">
-                    <div className="h-15 w-15 rounded-2xl bg-linear-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-3xl font-bold text-white shadow-xl">
+                <section className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6">
+                  <div className="flex items-center space-x-4 mb-6">
+                    <div className="h-12 w-12 rounded-xl bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center text-xl font-bold text-white">
                       {user?.name?.charAt(0) || 'A'}
                     </div>
                     <div>
-                      <h4 className="text-xl font-bold text-primary">{user?.name || 'User'}</h4>
-                      <p className="text-secondary text-sm">{user?.email}</p>
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{user?.name || 'User'}</h4>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">{user?.email}</p>
                       <div className="mt-2">
-                        {renderRoleBadge(user?.role || 'user')}
+                        {renderRoleBadge(user?.role || 'USER')}
                       </div>
                     </div>
                   </div>
@@ -1081,20 +1065,20 @@ const markUserAsVerified = async (userId: string) => {
 
               {/* ADMIN TAB */}
               {activeTab === 'admin' && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {/* Admin Header */}
-                  <div className="bg-linear-to-r from-blue-700 to-blue-700 text-white p-4 rounded-2xl">
+                  <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-lg">
                     <div className="flex flex-col md:flex-row md:items-center justify-between">
                       <div>
-                        <h3 className="text-xl font-bold flex items-center">
-                          <ShieldCheckIcon className="h-6 w-6 mr-2" />
+                        <h3 className="text-lg font-semibold flex items-center">
+                          <ShieldCheckIcon className="h-5 w-5 mr-2" />
                           Admin Panel
                         </h3>
-                        <p className="text-blue-100 mt-1">
+                        <p className="text-blue-100 text-sm mt-1">
                           Manage users and administrators
                         </p>
                       </div>
-                      <div className="mt-4 md:mt-0">
+                      <div className="mt-3 md:mt-0">
                         <span className="text-sm bg-white/20 px-3 py-1 rounded-full">
                           {users.length} total users
                         </span>
@@ -1102,151 +1086,136 @@ const markUserAsVerified = async (userId: string) => {
                     </div>
                   </div>
 
-                  {/* Action Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Quick Actions */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Create User Card */}
-                    <div className="bg-card border border-color rounded-2xl p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden">
-                      {/* Gradient background effect */}
-                      <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      
-                      <div className="flex items-center justify-between mb-4 relative z-10">
+                    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-all">
+                      <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center">
-                          <div className="p-3 bg-linear-to-br from-blue-500 to-blue-600 rounded-xl mr-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                            <UserPlusIcon className="h-6 w-6 text-white" />
+                          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3">
+                            <UserPlusIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                           </div>
                           <div>
-                            <h4 className="font-bold text-primary text-lg">
+                            <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
                               Create New User
                             </h4>
-                            <p className="text-sm text-secondary mt-1">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                               Add regular user accounts
                             </p>
                           </div>
                         </div>
                         <button 
                           onClick={openCreateUserModal}
-                          className="p-3 bg-linear-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 flex items-center shadow-lg hover:shadow-xl transition-all duration-300 group/btn"
+                          className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center transition-colors"
                           title="Create New User"
                         >
-                          <PlusIcon className="h-5 w-5 group-hover/btn:rotate-90 transition-transform duration-300" />
+                          <PlusIcon className="h-4 w-4" />
                         </button>
                       </div>
-                      <div className="relative z-10">
-                        <p className="text-secondary text-sm mb-3">
-                          Create user accounts with basic access permissions and email verification.
-                        </p>
-                        <div className="flex items-center text-xs text-blue-500 font-medium">
-                          <CheckCircleIcon className="h-4 w-4 mr-1" />
-                          Available to all administrators
-                        </div>
-                      </div>
+                      <p className="text-gray-600 dark:text-gray-400 text-xs">
+                        Create user accounts with basic access permissions and email verification.
+                      </p>
                     </div>
 
                     {/* Create Admin Card (Super Admin Only) */}
                     {isUserSuperAdmin() && (
-                      <div className="bg-card border border-color rounded-2xl p-6 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group relative overflow-hidden">
-                        {/* Gradient background effect */}
-                        <div className="absolute inset-0 bg-linear-to-br from-green-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        
-                        <div className="flex items-center justify-between mb-4 relative z-10">
+                      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-all">
+                        <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center">
-                            <div className="p-3 bg-linear-to-br from-green-500 to-emerald-600 rounded-xl mr-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                              <ShieldCheckIcon className="h-6 w-6 text-white" />
+                            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg mr-3">
+                              <ShieldCheckIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
                             </div>
                             <div>
-                              <h4 className="font-bold text-primary text-lg">
+                              <h4 className="font-semibold text-gray-900 dark:text-white text-sm">
                                 Create Administrator
                               </h4>
-                              <p className="text-sm text-secondary mt-1">
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                                 Add elevated access accounts
                               </p>
                             </div>
                           </div>
                           <button 
                             onClick={openCreateAdminModal}
-                            className="p-3 bg-linear-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 flex items-center shadow-lg hover:shadow-xl transition-all duration-300 group/btn"
+                            className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center transition-colors"
                             title="Create New Admin"
                           >
-                            <PlusIcon className="h-5 w-5 group-hover/btn:rotate-90 transition-transform duration-300" />
+                            <PlusIcon className="h-4 w-4" />
                           </button>
                         </div>
-                        <div className="relative z-10">
-                          <p className="text-secondary text-sm mb-3">
-                            Create admin or super admin accounts with full system access.
-                          </p>
-                          <div className="flex items-center text-xs text-green-500 font-medium">
-                            <ShieldCheckIcon className="h-4 w-4 mr-1" />
-                            Super Admin access required
-                          </div>
-                        </div>
+                        <p className="text-gray-600 dark:text-gray-400 text-xs">
+                          Create admin or super admin accounts with full system access.
+                        </p>
                       </div>
                     )}
                   </div>
 
                   {/* User Management Section */}
-                  <div className="bg-card border border-color rounded-2xl p-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                      <h4 className="font-bold text-lg text-primary flex items-center">
-                        <UsersIcon className="h-5 w-5 mr-2 text-blue-600 dark:text-blue-400" />
-                        User Management
-                        <span className="ml-2 px-2 py-1 text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full">
-                          {filteredUsers.length} users
-                        </span>
-                      </h4>
-                      
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <div className="relative">
-                          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-secondary" />
-                          <input 
-                            type="text" 
-                            placeholder="Search users..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10 pr-4 py-2 bg-primary border border-color rounded-xl text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full"
-                          />
-                        </div>
+                  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                    {/* Search and Filters */}
+                    <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+                        <h4 className="font-semibold text-gray-900 dark:text-white text-sm flex items-center">
+                          <UsersIcon className="h-4 w-4 mr-2 text-blue-600 dark:text-blue-400" />
+                          User Management
+                          <span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
+                            {filteredUsers.length} users
+                          </span>
+                        </h4>
                         
-                        <div className="relative">
-                          <FunnelIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-secondary" />
-                          <select
-                            value={roleFilter}
-                            onChange={(e) => setRoleFilter(e.target.value)}
-                            className="pl-10 pr-4 py-2 bg-primary border border-color rounded-xl text-primary focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-                          >
-                            <option value="all">All Roles</option>
-                            <option value="user">Users</option>
-                            <option value="admin">Admins</option>
-                            <option value="superadmin">Super Admins</option>
-                          </select>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <div className="relative">
+                            <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <input 
+                              type="text" 
+                              placeholder="Search users..."
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                              className="pl-9 pr-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm w-full"
+                            />
+                          </div>
+                          
+                          <div className="relative">
+                            <FunnelIcon className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <select
+                              value={roleFilter}
+                              onChange={(e) => setRoleFilter(e.target.value)}
+                              className="pl-9 pr-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm appearance-none"
+                            >
+                              <option value="all">All Roles</option>
+                              <option value="user">Users</option>
+                              <option value="admin">Admins</option>
+                              <option value="superadmin">Super Admins</option>
+                            </select>
+                          </div>
                         </div>
                       </div>
                     </div>
 
                     {/* Loading/Error/Empty States */}
                     {isLoading ? (
-                      <div className="py-12 flex flex-col items-center justify-center">
-                        <div className="animate-spin h-8 w-8 border-2 border-blue-500 border-t-transparent rounded-full mb-4"></div>
-                        <p className="text-secondary">Loading users...</p>
+                      <div className="py-8 flex flex-col items-center justify-center">
+                        <div className="animate-spin h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full mb-3"></div>
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">Loading users...</p>
                       </div>
                     ) : error ? (
-                      <div className="p-4 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300 rounded-lg border border-red-200 dark:border-red-800 mb-6">
-                        <p className="flex items-center">
-                          <ExclamationCircleIcon className="h-5 w-5 mr-2" />
+                      <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded m-4 border border-red-200 dark:border-red-800">
+                        <p className="flex items-center text-sm">
+                          <ExclamationCircleIcon className="h-4 w-4 mr-2" />
                           {error}
                         </p>
                         {error.includes('403') && (
                           <button 
                             onClick={() => window.location.reload()}
-                            className="mt-2 text-sm text-blue-600 hover:underline"
+                            className="mt-2 text-xs text-blue-600 dark:text-blue-400 hover:underline"
                           >
                             Refresh page and try again
                           </button>
                         )}
                       </div>
                     ) : filteredUsers.length === 0 ? (
-                      <div className="text-center py-12">
-                        <UsersIcon className="h-12 w-12 text-secondary mx-auto mb-4" />
-                        <p className="text-secondary">
+                      <div className="text-center py-8">
+                        <UsersIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">
                           {searchTerm || roleFilter !== 'all' 
                             ? 'No users match your search criteria'
                             : 'No users found'
@@ -1258,22 +1227,23 @@ const markUserAsVerified = async (userId: string) => {
                               setSearchTerm('');
                               setRoleFilter('all');
                             }}
-                            className="mt-2 text-blue-600 hover:underline"
+                            className="mt-2 text-xs text-blue-600 dark:text-blue-400 hover:underline"
                           >
                             Clear filters
                           </button>
                         )}
                       </div>
                     ) : (
-                      <div className="overflow-x-auto rounded-xl border border-color">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="bg-hover text-left text-secondary text-sm">
-                              <th className="p-4 font-medium border-b border-color">User</th>
-                              <th className="p-4 font-medium border-b border-color">Role</th>
-                              <th className="p-4 font-medium border-b border-color">Status</th>
-                              <th className="p-4 font-medium border-b border-color">Joined</th>
-                              <th className="p-4 font-medium border-b border-color">Actions</th>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                          <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                            <tr>
+                              <th scope="col" className="px-3 py-2">ID</th>
+                              <th scope="col" className="px-3 py-2">User</th>
+                              <th scope="col" className="px-3 py-2">Role</th>
+                              <th scope="col" className="px-3 py-2">Status</th>
+                              <th scope="col" className="px-3 py-2">Created</th>
+                              <th scope="col" className="px-3 py-2">Actions</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1285,22 +1255,22 @@ const markUserAsVerified = async (userId: string) => {
                   </div>
 
                   {/* Permissions Info */}
-                  <div className="bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 p-4 rounded-xl">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 p-3 rounded-lg text-xs">
                     <div className="flex items-start">
-                      <ShieldCheckIcon className="h-5 w-5 mr-2 mt-0.5 shrink-0" />
+                      <ShieldCheckIcon className="h-4 w-4 mr-2 mt-0.5 shrink-0" />
                       <div>
-                        <p className="font-medium">Admin Permissions Guide</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 text-sm">
+                        <p className="font-medium mb-1">Admin Permissions Guide</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           <div>
                             <span className="font-semibold">All Admins:</span>
-                            <ul className="list-disc list-inside ml-2 mt-1">
+                            <ul className="list-disc list-inside ml-2 mt-0.5">
                               <li>View all users</li>
                               <li>Create new users</li>
                             </ul>
                           </div>
                           <div>
                             <span className="font-semibold">Super Admins Only:</span>
-                            <ul className="list-disc list-inside ml-2 mt-1">
+                            <ul className="list-disc list-inside ml-2 mt-0.5">
                               <li>Create new admins</li>
                               <li>Change user roles</li>
                               <li>Delete users</li>
