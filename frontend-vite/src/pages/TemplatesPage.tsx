@@ -644,16 +644,17 @@ const TemplatesPage: React.FC = () => {
               <ThemeSwitcher />
               <button 
                 onClick={() => openModal()}
-                className="px-4 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center shadow-lg transition-all"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center shadow-lg transition-all"
               >
-                <PlusIcon className="h-5 w- mr-2" />
-                Create Template
+                <PlusIcon className="h-5 w-5 mr-2" />
+                <span className="hidden md:inline">Create Template</span>
+                <span className="md:hidden">Create</span>
               </button>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
           {/* Search Bar */}
           <div className="mb-6 relative max-w-md">
             <input
@@ -666,7 +667,10 @@ const TemplatesPage: React.FC = () => {
             <DocumentTextIcon className="absolute left-3 top-3.5 h-5 w-5 text-secondary" />
           </div>
 
-          
+          {/* API Base URL Info */}
+          <div className="mb-4 text-xs text-gray-500 dark:text-gray-400">
+            API Endpoint: <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">{API_BASE_URL}</code>
+          </div>
 
           {/* Templates Section */}
           {isLoading ? (
@@ -679,23 +683,24 @@ const TemplatesPage: React.FC = () => {
               {error}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {filteredTemplates.map((template) => (
-                <div key={template.id} className="bg-card rounded-xl border border-color p-5 hover:shadow-lg transition-all group">
+                <div key={template.id} className="bg-card rounded-xl border border-color p-4 md:p-5 hover:shadow-lg transition-all">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center space-x-3">
                       <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
                         {getIcon(template.type)}
                       </div>
-                      <div>
-                        <h3 className="font-bold text-primary">{template.name}</h3>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-bold text-primary truncate">{template.name}</h3>
                         <span className="text-xs font-mono text-secondary bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">
                           {template.type || 'EMAIL'}
                         </span>
                       </div>
                     </div>
                     
-                    <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* ALWAYS VISIBLE ACTION BUTTONS - Updated for mobile */}
+                    <div className="flex space-x-1">
                       <button 
                         onClick={() => handleSendTemplate(template)}
                         className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-green-500"
@@ -728,14 +733,14 @@ const TemplatesPage: React.FC = () => {
                   </div>
 
                   <div className="flex justify-between items-center text-xs text-secondary mt-2">
-                    <span>ID: #{template.id.substring(0, 8)}...</span>
+                    <span className="truncate mr-2">ID: #{template.id.substring(0, 8)}...</span>
                     <button 
                       onClick={() => navigator.clipboard.writeText(
                         template.type === 'EMAIL' 
                           ? template.htmlBody || template.content || '' 
                           : template.content || ''
                       )}
-                      className="flex items-center hover:text-primary"
+                      className="flex items-center hover:text-primary whitespace-nowrap"
                     >
                       <ClipboardIcon className="h-3 w-3 mr-1" /> Copy
                     </button>
@@ -749,31 +754,31 @@ const TemplatesPage: React.FC = () => {
 
       {/* --- ENHANCED CREATE/EDIT TEMPLATE MODAL --- */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 w-full max-w-6xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-4">
+          <div className="bg-white dark:bg-gray-800 w-full max-w-6xl rounded-2xl shadow-2xl flex flex-col max-h-[95vh] md:max-h-[90vh] overflow-hidden">
             
             {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-blue-600 text-white">
-              <div>
-                <h2 className="text-xl font-bold flex items-center">
-                  <SparklesIcon className="h-5 w-5 mr-2" />
-                  {isEditMode ? 'Edit Template' : 'Create New Template'}
+            <div className="px-4 md:px-6 py-3 md:py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-blue-600 text-white">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-lg md:text-xl font-bold flex items-center truncate">
+                  <SparklesIcon className="h-4 w-4 md:h-5 md:w-5 mr-2 shrink-0" />
+                  <span className="truncate">{isEditMode ? 'Edit Template' : 'Create New Template'}</span>
                 </h2>
-                <p className="text-sm opacity-90">Design and optimize your notification template</p>
+                <p className="text-xs md:text-sm opacity-90 truncate">Design and optimize your notification template</p>
               </div>
               <button 
                 onClick={() => {
                   setShowModal(false);
                   resetForm();
                 }} 
-                className="p-2 hover:bg-blue-700 rounded-full transition-colors"
+                className="p-1 md:p-2 hover:bg-blue-700 rounded-full transition-colors shrink-0 ml-2"
               >
-                <XMarkIcon className="h-6 w-6" />
+                <XMarkIcon className="h-5 w-5 md:h-6 md:w-6" />
               </button>
             </div>
 
-            {/* Progress Steps */}
-            <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+            {/* Progress Steps - Hidden on mobile, shown on desktop */}
+            <div className="hidden md:block px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
               <div className="flex items-center justify-between">
                 {['Setup', 'Content', 'Preview'].map((step, index) => (
                   <div key={step} className="flex items-center">
@@ -803,10 +808,10 @@ const TemplatesPage: React.FC = () => {
 
             <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
               {/* Main Editor */}
-              <div className="flex-1 p-6 overflow-y-auto">
-                <div className="space-y-6">
+              <div className="flex-1 p-4 md:p-6 overflow-y-auto">
+                <div className="space-y-4 md:space-y-6">
                   {/* Template Name & Type */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
                         Template Name *
@@ -837,7 +842,7 @@ const TemplatesPage: React.FC = () => {
                               : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                           }`}
                         >
-                          <EnvelopeIcon className={`h-6 w-6 mb-1 ${
+                          <EnvelopeIcon className={`h-5 w-5 md:h-6 md:w-6 mb-1 ${
                             formData.type === 'EMAIL' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'
                           }`} />
                           <span className="text-sm font-medium">Email</span>
@@ -852,7 +857,7 @@ const TemplatesPage: React.FC = () => {
                               : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                           }`}
                         >
-                          <ChatBubbleBottomCenterTextIcon className={`h-6 w-6 mb-1 ${
+                          <ChatBubbleBottomCenterTextIcon className={`h-5 w-5 md:h-6 md:w-6 mb-1 ${
                             formData.type === 'SMS' ? 'text-green-600 dark:text-green-400' : 'text-gray-400'
                           }`} />
                           <span className="text-sm font-medium">SMS</span>
@@ -867,7 +872,7 @@ const TemplatesPage: React.FC = () => {
                               : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                           }`}
                         >
-                          <BellIcon className={`h-6 w-6 mb-1 ${
+                          <BellIcon className={`h-5 w-5 md:h-6 md:w-6 mb-1 ${
                             formData.type === 'PUSH' ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400'
                           }`} />
                           <span className="text-sm font-medium">Push</span>
@@ -886,7 +891,7 @@ const TemplatesPage: React.FC = () => {
                         Click to insert
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
                       {[
                         { name: 'name', label: 'Name' },
                         { name: 'email', label: 'Email' },
@@ -902,8 +907,8 @@ const TemplatesPage: React.FC = () => {
                           className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-500 transition-colors flex flex-col items-center"
                           title={`Insert {{${variable.name}}}`}
                         >
-                          <span className="text-xs font-mono mb-1">{`{{${variable.name}}}`}</span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">{variable.label}</span>
+                          <span className="text-xs font-mono mb-1 truncate w-full text-center">{`{{${variable.name}}}`}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 truncate w-full text-center">{variable.label}</span>
                         </button>
                       ))}
                     </div>
@@ -945,7 +950,7 @@ const TemplatesPage: React.FC = () => {
                       <div className="flex items-center space-x-2">
                         {formData.type === 'SMS' && (
                           <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {formData.content.length}/160 characters
+                            {formData.content.length}/160
                           </span>
                         )}
                         <button
@@ -968,7 +973,7 @@ const TemplatesPage: React.FC = () => {
                         value={formData.htmlBody}
                         onChange={(e) => setFormData({...formData, htmlBody: e.target.value})}
                         placeholder="Enter your HTML content here. Use {{variables}} for personalization."
-                        rows={12}
+                        rows={8}
                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-mono text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
                       />
                     ) : (
@@ -977,7 +982,7 @@ const TemplatesPage: React.FC = () => {
                         value={formData.content}
                         onChange={(e) => setFormData({...formData, content: e.target.value})}
                         placeholder={`Enter your ${formData.type.toLowerCase()} message...`}
-                        rows={8}
+                        rows={6}
                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-mono text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
                       />
                     )}
@@ -993,7 +998,7 @@ const TemplatesPage: React.FC = () => {
                           value={formData.textBody}
                           onChange={(e) => setFormData({...formData, textBody: e.target.value})}
                           placeholder="Plain text version of your email..."
-                          rows={4}
+                          rows={3}
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-mono text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
                         />
                       </div>
@@ -1001,9 +1006,9 @@ const TemplatesPage: React.FC = () => {
                   </div>
 
                   {/* Preview Section */}
-                  <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Preview</h3>
-                    <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4 md:pt-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 md:mb-4">Preview</h3>
+                    <div className="bg-gray-50 dark:bg-gray-900 p-3 md:p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                       {formData.type === 'EMAIL' ? (
                         <div className="space-y-3">
                           <div>
@@ -1014,10 +1019,10 @@ const TemplatesPage: React.FC = () => {
                           </div>
                           <div>
                             <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Content Preview:</div>
-                            <div className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap max-h-60 overflow-y-auto p-3 bg-white dark:bg-gray-800 rounded border">
+                            <div className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap max-h-40 md:max-h-60 overflow-y-auto p-3 bg-white dark:bg-gray-800 rounded border">
                               {formData.htmlBody 
-                                ? (formData.htmlBody.length > 500 
-                                    ? formData.htmlBody.substring(0, 500) + '...' 
+                                ? (formData.htmlBody.length > 300 
+                                    ? formData.htmlBody.substring(0, 300) + '...' 
                                     : formData.htmlBody)
                                 : 'No content yet'
                               }
@@ -1039,7 +1044,7 @@ const TemplatesPage: React.FC = () => {
                         </div>
                       ) : (
                         <div className="max-w-md">
-                          <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-2xl">
+                          <div className="bg-gray-100 dark:bg-gray-800 p-3 md:p-4 rounded-2xl">
                             <div className="flex items-center space-x-3 mb-2">
                               <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
                                 <BellIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
@@ -1061,8 +1066,8 @@ const TemplatesPage: React.FC = () => {
               </div>
 
               {/* Sidebar - Tips & Stats WITH ACTION BUTTONS */}
-              <div className="lg:w-80 border-l border-gray-200 dark:border-gray-700 p-6 bg-gray-50 dark:bg-gray-900/50 flex flex-col">
-                <div className="flex-1 space-y-6">
+              <div className="lg:w-80 border-l border-gray-200 dark:border-gray-700 p-4 md:p-6 bg-gray-50 dark:bg-gray-900/50 flex flex-col">
+                <div className="flex-1 space-y-4 md:space-y-6">
                   {/* Tips Section */}
                   <div>
                     <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3 flex items-center">
@@ -1071,16 +1076,16 @@ const TemplatesPage: React.FC = () => {
                     </h4>
                     <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                       <li className="flex items-start">
-                        <div className="h-1.5 w-1.5 bg-blue-500 rounded-full mr-2 mt-1.5"></div>
-                        Use <code className="mx-1 px-1 bg-gray-200 dark:bg-gray-800 rounded">{"{{name}}"}</code> for personalization
+                        <div className="h-1.5 w-1.5 bg-blue-500 rounded-full mr-2 mt-1.5 shrink-0"></div>
+                        <span>Use <code className="mx-1 px-1 bg-gray-200 dark:bg-gray-800 rounded">{"{{name}}"}</code> for personalization</span>
                       </li>
                       <li className="flex items-start">
-                        <div className="h-1.5 w-1.5 bg-blue-500 rounded-full mr-2 mt-1.5"></div>
-                        Keep {formData.type === 'EMAIL' ? 'subject lines' : 'messages'} concise
+                        <div className="h-1.5 w-1.5 bg-blue-500 rounded-full mr-2 mt-1.5 shrink-0"></div>
+                        <span>Keep {formData.type === 'EMAIL' ? 'subject lines' : 'messages'} concise</span>
                       </li>
                       <li className="flex items-start">
-                        <div className="h-1.5 w-1.5 bg-blue-500 rounded-full mr-2 mt-1.5"></div>
-                        Test with a small group before sending to all recipients
+                        <div className="h-1.5 w-1.5 bg-blue-500 rounded-full mr-2 mt-1.5shrink-0"></div>
+                        <span>Test with a small group before sending to all recipients</span>
                       </li>
                     </ul>
                   </div>
@@ -1120,7 +1125,7 @@ const TemplatesPage: React.FC = () => {
                       ) : formData.type === 'SMS' ? (
                         <>
                           <div className="text-xs text-gray-500 dark:text-gray-400">✓ Keep under 160 characters</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">✓ Clear, concise language</div>
+                          <div className="text-xs text-gray500 dark:text-gray-400">✓ Clear, concise language</div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">✓ Include opt-out instructions</div>
                         </>
                       ) : (
@@ -1133,8 +1138,8 @@ const TemplatesPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Desktop Action Buttons */}
-                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                  {/* Desktop Action Buttons - Hidden on mobile */}
+                  <div className="hidden lg:block pt-4 border-t border-gray-200 dark:border-gray-700">
                     <div className="space-y-3">
                       <button
                         onClick={handleSubmit}
@@ -1163,22 +1168,22 @@ const TemplatesPage: React.FC = () => {
             </div>
 
             {/* Mobile Action Bar - Only shows on mobile */}
-            <div className="lg:hidden px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-between space-x-3">
+            <div className="lg:hidden px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-between space-x-3">
               <button
                 onClick={() => {
                   setShowModal(false);
                   resetForm();
                 }}
-                className="px-6 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg font-medium hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
+                className="px-4 md:px-6 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg font-medium hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors flex-1"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={!formData.name || (formData.type === 'EMAIL' ? !formData.htmlBody : !formData.content)}
-                className="px-6 py-2 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 md:px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex-1"
               >
-                {isEditMode ? 'Save Changes' : 'Create Template'}
+                {isEditMode ? 'Save' : 'Create'}
               </button>
             </div>
           </div>
@@ -1187,24 +1192,24 @@ const TemplatesPage: React.FC = () => {
 
       {/* --- SEND TEMPLATE MODAL --- */}
       {showSendModal && selectedTemplateForSend && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-4">
+          <div className="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[95vh] md:max-h-[90vh] overflow-hidden">
             
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-blue-600 dark:bg-blue-800 text-white">
-              <div>
-                <h2 className="text-xl font-bold">Send Template</h2>
-                <p className="text-sm opacity-90">{selectedTemplateForSend.name}</p>
+            <div className="px-4 md:px-6 py-3 md:py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-blue-600 dark:bg-blue-800 text-white">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-lg md:text-xl font-bold truncate">Send Template</h2>
+                <p className="text-xs md:text-sm opacity-90 truncate">{selectedTemplateForSend.name}</p>
               </div>
               <button 
                 onClick={() => setShowSendModal(false)}
-                className="p-2 hover:bg-blue-700 rounded-full transition-colors"
+                className="p-1 md:p-2 hover:bg-blue-700 rounded-full transition-colors ml-2 flex-shrink-0"
                 disabled={isSending}
               >
-                <XMarkIcon className="h-6 w-6" />
+                <XMarkIcon className="h-5 w-5 md:h-6 md:w-6" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6">
               {sendError && (
                 <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-300 rounded-lg border border-red-200 dark:border-red-800">
                   {sendError}
@@ -1233,17 +1238,17 @@ const TemplatesPage: React.FC = () => {
                               setSelectedRecipients(prev => prev.filter(id => id !== recipient.id));
                             }
                           }}
-                          className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500"
+                          className="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 flex-shrink-0"
                           disabled={isSending}
                         />
-                        <label htmlFor={`recipient-${recipient.id}`} className="ml-3 flex-1 cursor-pointer">
-                          <div className="font-medium text-gray-900 dark:text-white">{recipient.name}</div>
-                          <div className="text-sm text-gray-600 dark:text-gray-300">{recipient.email}</div>
+                        <label htmlFor={`recipient-${recipient.id}`} className="ml-3 flex-1 cursor-pointer min-w-0">
+                          <div className="font-medium text-gray-900 dark:text-white truncate">{recipient.name}</div>
+                          <div className="text-sm text-gray-600 dark:text-gray-300 truncate">{recipient.email}</div>
                           {recipient.phone && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400">{recipient.phone}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{recipient.phone}</div>
                           )}
                         </label>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
+                        <span className={`px-2 py-1 text-xs rounded-full flex-shrink-0 ml-2 ${
                           recipient.status === 'active' 
                             ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
                             : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
@@ -1265,8 +1270,8 @@ const TemplatesPage: React.FC = () => {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Template Variables</h3>
                   <div className="space-y-3">
                     {selectedTemplateForSend.variables.map(variable => (
-                      <div key={variable} className="flex items-center">
-                        <label className="w-32 text-sm font-medium text-gray-900 dark:text-white">
+                      <div key={variable} className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <label className="w-full sm:w-32 text-sm font-medium text-gray-900 dark:text-white">
                           {variable}:
                         </label>
                         <input
@@ -1289,24 +1294,24 @@ const TemplatesPage: React.FC = () => {
               {/* Preview */}
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Preview</h3>
-                <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                <div className="bg-gray-50 dark:bg-gray-900 p-3 md:p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white mb-2 truncate">
                     Subject: {selectedTemplateForSend.subject || 'No subject'}
                   </div>
                   <div className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap max-h-40 overflow-y-auto">
                     {selectedTemplateForSend.htmlBody 
-                      ? (selectedTemplateForSend.htmlBody.substring(0, 300) + (selectedTemplateForSend.htmlBody.length > 300 ? '...' : ''))
-                      : selectedTemplateForSend.content?.substring(0, 300) + (selectedTemplateForSend.content && selectedTemplateForSend.content.length > 300 ? '...' : '') || 'No content'
+                      ? (selectedTemplateForSend.htmlBody.substring(0, 200) + (selectedTemplateForSend.htmlBody.length > 200 ? '...' : ''))
+                      : selectedTemplateForSend.content?.substring(0, 200) + (selectedTemplateForSend.content && selectedTemplateForSend.content.length > 200 ? '...' : '') || 'No content'
                     }
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-end space-x-3">
+            <div className="px-4 md:px-6 py-3 md:py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-end space-x-3">
               <button 
                 onClick={() => setShowSendModal(false)}
-                className="px-6 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg font-medium hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 md:px-6 py-2 bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg font-medium hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-1 md:flex-none"
                 disabled={isSending}
               >
                 Cancel
@@ -1314,7 +1319,7 @@ const TemplatesPage: React.FC = () => {
               <button 
                 onClick={sendNotification}
                 disabled={isSending || selectedRecipients.length === 0}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center min-w-50"
+                className="px-4 md:px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center flex-1 md:flex-none min-w-[140px]"
               >
                 {isSending ? (
                   <>
@@ -1324,7 +1329,7 @@ const TemplatesPage: React.FC = () => {
                 ) : (
                   <>
                     <PaperAirplaneIcon className="h-5 w-5 mr-2" />
-                    Send to {selectedRecipients.length} Recipient(s)
+                    Send ({selectedRecipients.length})
                   </>
                 )}
               </button>
