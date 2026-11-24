@@ -17,11 +17,17 @@ interface BulkSMSResult {
 @Injectable()
 export class SmsService {
   private readonly baseUrl = 'https://api.textsms.co.ke/api/v3';
-  private readonly senderId = process.env.TEXTSMS_SENDER_ID || 'BIRDVIEW';
+  private readonly senderId = process.env.TEXTSMS_SENDER_ID;
   private readonly apiKey = process.env.TEXTSMS_API_KEY;
   private readonly partnerId = process.env.TEXTSMS_PARTNER_ID;
 
   async sendSMS(to: string, message: string): Promise<SMSResult> {
+    if (!this.apiKey || !this.partnerId || !this.senderId) {
+      return {
+        success: false,
+        error: 'SMS is not configured: set TEXTSMS_API_KEY, TEXTSMS_PARTNER_ID and TEXTSMS_SENDER_ID',
+      };
+    }
     try {
       const response = await axios.post(
         `${this.baseUrl}/sendsms`,

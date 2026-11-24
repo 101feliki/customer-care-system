@@ -14,7 +14,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   title = 'Customer Care System',
   description 
 }) => {
-  const { theme } = useTheme();
+  useTheme();
 
   return (
     <div className="app-container">

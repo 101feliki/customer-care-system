@@ -1,4 +1,4 @@
-// src/infra/database/prisma/seed.ts - FINAL VERSION
+// src/infra/database/prisma/seed.ts
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -8,15 +8,20 @@ async function main() {
   console.log('Seeding database...');
   
   try {
-    // 1. Hash password for admin user
-    const hashedPassword = await bcrypt.hash('admin123', 10);
+    // 1. Admin credentials come from the environment so no password is hard-coded
+    const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@example.com';
+    const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+    if (!adminPassword || adminPassword.length < 8) {
+      throw new Error('Set SEED_ADMIN_PASSWORD (8+ characters) before seeding');
+    }
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
     
     // 2. Create admin user
     const adminUser = await prisma.user.upsert({
-      where: { email: 'admin@birdview.com' },
+      where: { email: adminEmail },
       update: {},
       create: {
-        email: 'admin@birdview.com',
+        email: adminEmail,
         password: hashedPassword,
         name: 'Admin User',
         role: 'ADMIN',

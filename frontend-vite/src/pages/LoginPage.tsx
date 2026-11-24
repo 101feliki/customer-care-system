@@ -7,8 +7,7 @@ import {
   EnvelopeIcon,
   ArrowLeftIcon,
   ExclamationCircleIcon,
-  CheckCircleIcon,
-  XMarkIcon
+  CheckCircleIcon
 } from '@heroicons/react/24/outline';
 
 // Get API base URL from environment variable
@@ -32,15 +31,6 @@ interface LoginResponse {
   message?: string;
 }
 
-interface ForgotPasswordRequest {
-  email: string;
-}
-
-interface ResetPasswordRequest {
-  token: string;
-  password: string;
-  confirmPassword?: string;
-}
 
 interface AuthResponse {
   message: string;

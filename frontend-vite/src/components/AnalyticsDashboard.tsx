@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {
   BarChart,
   Bar,
@@ -62,7 +62,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ data }) => {
                   fill="#8884d8"
                   dataKey="count"
                 >
-                  {data.notificationsByCategory.map((entry, index) => (
+                  {data.notificationsByCategory.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

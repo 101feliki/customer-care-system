@@ -25,7 +25,6 @@ import {
   XMarkIcon,
   KeyIcon,
   SparklesIcon,
-  PencilIcon,
   ClockIcon
 } from '@heroicons/react/24/outline';
 
@@ -77,11 +76,6 @@ const SettingsPage: React.FC = () => {
 
   // API Base URL
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-
-  // Helper function to get theme-based classes
-  const getThemeClass = (lightClass: string, darkClass: string) => {
-    return theme === 'dark' ? darkClass : lightClass;
-  };
 
   // Helper functions for role checks
   const isUserAdmin = () => {

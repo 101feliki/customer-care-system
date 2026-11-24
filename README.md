@@ -119,14 +119,20 @@ FROM_EMAIL=you@example.com
 TEXTSMS_API_KEY=your-api-key
 TEXTSMS_PARTNER_ID=your-partner-id
 TEXTSMS_SENDER_ID=your-sender-id
+
+# Used only by the seed script
+SEED_ADMIN_EMAIL=admin@example.com
+SEED_ADMIN_PASSWORD=choose-a-strong-password
 ```
 Then:
 ```bash
 cd backend
 npm install
 npx prisma migrate dev --schema src/infra/database/prisma/schema.prisma
+npx ts-node src/infra/database/prisma/seed.ts   # optional: creates the admin user and sample data
 npm run start:dev
 ```
+SMS is optional: if the TextSMS variables are not set, SMS sends return a clear error instead of failing silently.
 
 ### 3. Frontend
 Create `frontend-vite/.env`:

@@ -302,8 +302,8 @@ const TemplatesPage: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState('');
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
-  const [recipientsLoading, setRecipientsLoading] = useState(false);
-  const [recipientStats, setRecipientStats] = useState<RecipientStats>({
+  const [, setRecipientsLoading] = useState(false);
+  const [, setRecipientStats] = useState<RecipientStats>({
     total: 0,
     active: 0,
     inactive: 0,
@@ -607,15 +607,6 @@ const TemplatesPage: React.FC = () => {
       return template.subject || template.htmlBody?.substring(0, 100) || 'No content';
     }
     return template.content?.substring(0, 100) || 'No content';
-  };
-
-  const getRecipientStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'text-green-600 bg-green-50 dark:bg-green-900/20';
-      case 'inactive': return 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20';
-      case 'blocked': return 'text-red-600 bg-red-50 dark:bg-red-900/20';
-      default: return 'text-gray-600 bg-gray-50 dark:bg-gray-800';
-    }
   };
 
   const filteredTemplates = templates.filter(t => 

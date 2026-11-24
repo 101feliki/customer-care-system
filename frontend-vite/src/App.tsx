@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import AppRouter from './AppRouter';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext'; // Ensure ThemeProvider is also here

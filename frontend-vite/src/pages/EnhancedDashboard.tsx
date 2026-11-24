@@ -1,10 +1,9 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import EnhancedNotificationCard from '../components/EnhancedNotificationCard';
 import AnalyticsDashboard from '../components/AnalyticsDashboard';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 import FilterBar from '../components/FilterBar';
-import { useTheme } from '../contexts/ThemeContext';
 import notificationService, { Notification } from '../services/notificationService';
 import { 
   Bell, 
@@ -14,8 +13,7 @@ import {
 } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
-  const { theme } = useTheme();
-  const [view, setView] = useState<'list' | 'analytics'>('list');
+  const [view] = useState<'list' | 'analytics'>('list');
   const [starredNotifications, setStarredNotifications] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState({
     category: 'all',
@@ -27,8 +25,6 @@ const Dashboard: React.FC = () => {
   
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showUserMenu ] = useState(false);
-  const [showSearch] = useState(false);
 
   useEffect(() => {
     const fetchNotifications = async () => {

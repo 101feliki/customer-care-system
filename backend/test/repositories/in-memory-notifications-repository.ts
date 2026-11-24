@@ -31,6 +31,10 @@ export class InMemoryNotificationsRepository
     );
   }
 
+  async findAll(): Promise<Notification[]> {
+    return [...this.notifications];
+  }
+
   async create(notification: Notification) {
     this.notifications.push(notification);
   }
