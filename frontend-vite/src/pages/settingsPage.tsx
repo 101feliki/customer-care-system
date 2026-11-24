@@ -110,7 +110,7 @@ const SettingsPage: React.FC = () => {
   // 1. FETCH USERS FROM BACKEND
   const fetchUsers = async () => {
     if (!token) {
-      console.log('❌ No token available');
+      console.log('No token available');
       setError('Please login first');
       setIsLoading(false);
       return;
@@ -119,7 +119,7 @@ const SettingsPage: React.FC = () => {
     try {
       setIsLoading(true);
       setError('');
-      console.log('🔍 Fetching users...');
+      console.log('Fetching users...');
       
       const response = await fetch(`${API_BASE_URL}/admin/users`, {
         headers: { 
@@ -128,36 +128,36 @@ const SettingsPage: React.FC = () => {
         }
       });
       
-      console.log('📡 Status:', response.status, response.statusText);
+      console.log('Status:', response.status, response.statusText);
       
       if (!response.ok) {
         if (response.status === 403) {
           setError('Access denied. You do not have admin privileges.');
-          console.error('❌ 403 Forbidden - User is not an admin');
+          console.error('403 Forbidden - User is not an admin');
           return;
         }
         const errorText = await response.text();
-        console.error('❌ HTTP Error:', response.status, errorText);
+        console.error('HTTP Error:', response.status, errorText);
         throw new Error(`Failed to fetch users: ${response.status}`);
       }
       
       const data = await response.json();
-      console.log('✅ API Response:', data);
+      console.log('API Response:', data);
       
       // Extract users array from response
       let usersArray: any[] = [];
       
       if (data && data.users && Array.isArray(data.users)) {
         usersArray = data.users;
-        console.log(`✅ Found ${usersArray.length} users in "users" property`);
+        console.log(`Found ${usersArray.length} users in "users" property`);
       } else if (Array.isArray(data)) {
         usersArray = data;
-        console.log(`✅ Found ${usersArray.length} users in direct array`);
+        console.log(`Found ${usersArray.length} users in direct array`);
       } else if (data && data.data && Array.isArray(data.data)) {
         usersArray = data.data;
-        console.log(`✅ Found ${usersArray.length} users in "data" property`);
+        console.log(`Found ${usersArray.length} users in "data" property`);
       } else {
-        console.warn('⚠️ Unexpected response format:', data);
+        console.warn('Unexpected response format:', data);
         usersArray = [];
       }
       
@@ -171,20 +171,20 @@ const SettingsPage: React.FC = () => {
         createdAt: item.createdAt || new Date().toISOString()
       }));
       
-      console.log('✅ Mapped users:', mappedUsers);
+      console.log('Mapped users:', mappedUsers);
       setUsers(mappedUsers);
       
       if (mappedUsers.length === 0) {
-        console.log('ℹ️ No users found in database');
+        console.log('No users found in database');
       }
       
     } catch (err) {
-      console.error('❌ Error fetching users:', err);
+      console.error('Error fetching users:', err);
       setError(`Could not load users: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setUsers([]);
     } finally {
       setIsLoading(false);
-      console.log('🏁 Loading completed');
+      console.log('Loading completed');
     }
   };
 
@@ -196,7 +196,7 @@ const SettingsPage: React.FC = () => {
     }
 
     try {
-      console.log('📤 Creating user:', userData.email);
+      console.log('Creating user:', userData.email);
       
       const response = await fetch(`${API_BASE_URL}/admin/users`, {
         method: 'POST',
@@ -212,11 +212,11 @@ const SettingsPage: React.FC = () => {
         })
       });
       
-      console.log('📡 Response status:', response.status);
+      console.log('Response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Full error response:', errorText);
+        console.error('Full error response:', errorText);
         
         try {
           const errorData = JSON.parse(errorText);
@@ -227,14 +227,14 @@ const SettingsPage: React.FC = () => {
       }
       
       const responseData = await response.json();
-      console.log('✅ User created:', responseData);
+      console.log('User created:', responseData);
       
       toast.success('User created successfully!');
       fetchUsers(); // Refresh list
       return responseData;
       
     } catch (error: any) {
-      console.error('❌ Error creating user:', error);
+      console.error('Error creating user:', error);
       toast.error(error.message || 'Failed to create user');
       throw error;
     }
@@ -248,7 +248,7 @@ const SettingsPage: React.FC = () => {
     }
 
     try {
-      console.log('📤 Creating admin:', adminData.email);
+      console.log('Creating admin:', adminData.email);
       
       const response = await fetch(`${API_BASE_URL}/admin/create-admin`, {
         method: 'POST',
@@ -264,11 +264,11 @@ const SettingsPage: React.FC = () => {
         })
       });
       
-      console.log('📡 Response status:', response.status);
+      console.log('Response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
+        console.error('Error response:', errorText);
         
         try {
           const errorData = JSON.parse(errorText);
@@ -279,14 +279,14 @@ const SettingsPage: React.FC = () => {
       }
       
       const responseData = await response.json();
-      console.log('✅ Admin created:', responseData);
+      console.log('Admin created:', responseData);
       
       toast.success('Admin created successfully!');
       fetchUsers(); // Refresh list
       return responseData;
       
     } catch (error: any) {
-      console.error('❌ Error creating admin:', error);
+      console.error('Error creating admin:', error);
       toast.error(error.message || 'Failed to create admin');
       throw error;
     }
@@ -300,7 +300,7 @@ const SettingsPage: React.FC = () => {
     }
 
     try {
-      console.log('📤 Updating user role:', { userId, role });
+      console.log('Updating user role:', { userId, role });
       
       const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/role`, {
         method: 'PUT',
@@ -311,22 +311,22 @@ const SettingsPage: React.FC = () => {
         body: JSON.stringify({ role: role.toLowerCase() })
       });
       
-      console.log('📡 Response status:', response.status);
+      console.log('Response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
+        console.error('Error response:', errorText);
         throw new Error(`Failed to update role: ${response.status} ${response.statusText}`);
       }
       
       const responseData = await response.json();
-      console.log('✅ Role updated:', responseData);
+      console.log('Role updated:', responseData);
       
       toast.success('User role updated!');
       fetchUsers(); // Refresh list
       
     } catch (error: any) {
-      console.error('❌ Error updating role:', error);
+      console.error('Error updating role:', error);
       toast.error(error.message || 'Failed to update role');
     }
   };
@@ -339,7 +339,7 @@ const SettingsPage: React.FC = () => {
     }
 
     try {
-      console.log('📤 Verifying user:', userId);
+      console.log('Verifying user:', userId);
       
       const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/send-verification`, {
         method: 'POST',
@@ -349,11 +349,11 @@ const SettingsPage: React.FC = () => {
         }
       });
       
-      console.log('📡 Response status:', response.status);
+      console.log('Response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
+        console.error('Error response:', errorText);
         throw new Error(`Failed to verify user: ${response.status}`);
       }
       
@@ -361,7 +361,7 @@ const SettingsPage: React.FC = () => {
       fetchUsers();
       
     } catch (error: any) {
-      console.error('❌ Error verifying user:', error);
+      console.error('Error verifying user:', error);
       toast.error(error.message || 'Failed to verify user');
     }
   };
@@ -374,7 +374,7 @@ const SettingsPage: React.FC = () => {
     }
 
     try {
-      console.log('📤 Marking user as verified:', userId);
+      console.log('Marking user as verified:', userId);
       
       const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/verify`, {
         method: 'PUT',
@@ -384,11 +384,11 @@ const SettingsPage: React.FC = () => {
         }
       });
       
-      console.log('📡 Response status:', response.status);
+      console.log('Response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
+        console.error('Error response:', errorText);
         throw new Error(`Failed to mark user as verified: ${response.status}`);
       }
       
@@ -396,7 +396,7 @@ const SettingsPage: React.FC = () => {
       fetchUsers();
       
     } catch (error: any) {
-      console.error('❌ Error marking user as verified:', error);
+      console.error('Error marking user as verified:', error);
       toast.error(error.message || 'Failed to verify user');
     }
   };
@@ -413,7 +413,7 @@ const SettingsPage: React.FC = () => {
     }
 
     try {
-      console.log('📤 Deleting user:', userId);
+      console.log('Deleting user:', userId);
       
       const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
         method: 'DELETE',
@@ -423,21 +423,21 @@ const SettingsPage: React.FC = () => {
         }
       });
       
-      console.log('📡 Response status:', response.status);
+      console.log('Response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
+        console.error('Error response:', errorText);
         throw new Error(`Failed to delete user: ${response.status} ${response.statusText}`);
       }
       
-      console.log('✅ User deleted');
+      console.log('User deleted');
       
       toast.success('User deleted successfully!');
       fetchUsers();
       
     } catch (error: any) {
-      console.error('❌ Error deleting user:', error);
+      console.error('Error deleting user:', error);
       toast.error(error.message || 'Failed to delete user');
     }
   };

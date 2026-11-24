@@ -25,23 +25,23 @@ export class EmailService {
     const fromAddress = this.configService.get<string>('MAIL_FROM_ADDRESS');
 
     if (!host || !user || !pass || !fromAddress) {
-      this.logger.error('❌ Missing SMTP environment variables');
+      this.logger.error('Missing SMTP environment variables');
       return; // DO NOT crash the app
     }
 
-    this.logger.log(`📧 SMTP Host: ${host}`);
-    this.logger.log(`📧 SMTP Port: ${port}`);
-    this.logger.log(`📧 SMTP User: ${user}`);
+    this.logger.log(`SMTP Host: ${host}`);
+    this.logger.log(`SMTP Port: ${port}`);
+    this.logger.log(`SMTP User: ${user}`);
 
     this.transporter = nodemailer.createTransport({
       host,
       port,
-      secure: false, // ✅ REQUIRED for 587
+      secure: false, // REQUIRED for 587
       auth: {
         user,
         pass,
       },
-      requireTLS: true, // ✅ STARTTLS
+      requireTLS: true, // STARTTLS
       tls: {
         rejectUnauthorized: false,
       },
@@ -68,10 +68,10 @@ export class EmailService {
         html,
       });
 
-      this.logger.log(`✅ Email sent → ${to}`);
+      this.logger.log(`Email sent → ${to}`);
       return { success: true, messageId: info.messageId };
     } catch (error: any) {
-      this.logger.error(`❌ Email failed → ${to}`, error.message);
+      this.logger.error(`Email failed → ${to}`, error.message);
       return { success: false, error: error.message };
     }
   }

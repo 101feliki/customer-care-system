@@ -1,4 +1,4 @@
-<h1 align="center">📣 Customer Care Notification System</h1>
+<h1 align="center">Customer Care Notification System</h1>
 
 <p align="center">
   A full-stack platform for reaching customers by <b>email</b> and <b>SMS</b> — send one-off messages, run bulk campaigns from CSV lists, manage templates and recipients, and track delivery from one dashboard.
@@ -18,34 +18,34 @@
 
 ---
 
-## ✨ Features
+## Features
 
 **Messaging**
-- 📧 Send email notifications through any SMTP provider (Nodemailer)
-- 📱 Send SMS through the TextSMS Kenya API
-- 📝 Reusable email templates with variables
-- 📦 Bulk sending — to a list, to all recipients, or straight from an uploaded CSV
-- 📊 Bulk job tracking: total, processed, success and failure counts
-- ✅ Mark notifications read / unread, or cancel them
+- Send email notifications through any SMTP provider (Nodemailer)
+- Send SMS through the TextSMS Kenya API
+- Reusable email templates with variables
+- Bulk sending — to a list, to all recipients, or straight from an uploaded CSV
+- Bulk job tracking: total, processed, success and failure counts
+- Mark notifications read / unread, or cancel them
 
 **Recipients**
-- 👥 Add, edit and delete recipients
-- 📄 Import recipients in bulk from CSV
+- Add, edit and delete recipients
+- Import recipients in bulk from CSV
 
 **Users & security**
-- 🔐 JWT login with refresh tokens
-- 📨 Email verification and password reset
-- 🛡️ Role-based access: `USER`, `ADMIN`, `SUPERADMIN`
-- 🧑‍💼 Admin panel to manage users, roles and stats
+- JWT login with refresh tokens
+- Email verification and password reset
+- Role-based access: `USER`, `ADMIN`, `SUPERADMIN`
+- Admin panel to manage users, roles and stats
 
 **Dashboard**
-- 📈 Analytics dashboard with charts (Recharts)
-- 🌗 Light / dark theme
-- 🔎 Filters and search across notifications
+- Analytics dashboard with charts (Recharts)
+- Light / dark theme
+- Filters and search across notifications
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌──────────────────────┐   REST + JWT   ┌──────────────────────────┐
@@ -74,7 +74,7 @@ customer-care-system/
 
 ---
 
-## 🔌 API Overview
+## API Overview
 
 | Area | Endpoints |
 |---|---|
@@ -87,7 +87,7 @@ customer-care-system/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Node.js 18+
@@ -146,10 +146,10 @@ cd backend
 npm test
 ```
 
-> ⚠️ Keep your `.env` files out of Git — they hold passwords and API keys.
+> Keep your `.env` files out of Git — they hold passwords and API keys.
 
 ---
 
-## 👤 Author
+## Author
 
 **Felix Kariuki** — [@101feliki](https://github.com/101feliki)

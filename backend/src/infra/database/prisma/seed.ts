@@ -5,7 +5,7 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🚀 Seeding database...');
+  console.log('Seeding database...');
   
   try {
     // 1. Hash password for admin user
@@ -23,7 +23,7 @@ async function main() {
         isVerified: true,
       },
     });
-    console.log('✅ Created admin user:', adminUser.email);
+    console.log('Created admin user:', adminUser.email);
     
     // 3. Create recipients (email is @unique so upsert works)
     const recipients = await Promise.all([
@@ -47,7 +47,7 @@ async function main() {
       }),
     ]);
     
-    console.log(`✅ Created ${recipients.length} recipients`);
+    console.log(`Created ${recipients.length} recipients`);
     
     // 4. Create email templates
     const templates = await Promise.all([
@@ -75,18 +75,18 @@ async function main() {
       }),
     ]);
     
-    console.log(`✅ Created ${templates.length} email templates`);
-    console.log('🎉 Database seeding completed!');
+    console.log(`Created ${templates.length} email templates`);
+    console.log('Database seeding completed!');
     
   } catch (error) {
-    console.error('❌ Seeding error:', error);
+    console.error('Seeding error:', error);
     throw error;
   }
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Fatal error:', e);
+    console.error('Fatal error:', e);
     process.exit(1);
   })
   .finally(async () => {

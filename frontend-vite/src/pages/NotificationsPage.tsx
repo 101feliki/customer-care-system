@@ -178,7 +178,7 @@ const NotificationsPage: React.FC = () => {
               </div>
             ) : filteredNotifications.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-gray-400 text-4xl mb-4">📭</div>
+                <div className="text-gray-400 text-4xl mb-4"></div>
                 <h3 className="text-lg font-medium text-primary">No notifications found</h3>
                 <p className="text-secondary">Try adjusting your filters or create a new notification</p>
               </div>
@@ -196,16 +196,16 @@ const NotificationsPage: React.FC = () => {
             notification.category === 'urgent' ? 'bg-red-50 dark:bg-red-900/20' :
             'bg-gray-50 dark:bg-gray-800'
           }`}>
-            {notification.category === 'email' && '📧'}
-            {notification.category === 'sms' && '💬'}
-            {notification.category === 'urgent' && '⚠️'}
-            {notification.category === 'info' && 'ℹ️'}
+            {notification.category === 'email' && ''}
+            {notification.category === 'sms' && ''}
+            {notification.category === 'urgent' && ''}
+            {notification.category === 'info' && ''}
           </div>
           <button
             onClick={() => starNotification(notification.id)}
             className="text-gray-400 hover:text-yellow-500 shrink-0 ml-2"
           >
-            {starredNotifications.has(notification.id) ? '★' : '☆'}
+            {starredNotifications.has(notification.id) ? '' : ''}
           </button>
         </div>
         

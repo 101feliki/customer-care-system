@@ -79,7 +79,7 @@ const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClose,  tok
       }
 
       const result = await response.json();
-      alert(`✅ Successfully imported ${result.count} recipients`);
+      alert(`Successfully imported ${result.count} recipients`);
       onClose();
       
       // Refresh the page or update recipients list

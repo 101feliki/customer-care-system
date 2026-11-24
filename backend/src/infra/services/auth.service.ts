@@ -48,7 +48,7 @@ export class AuthService {
   }
 
   async register(email: string, password: string, name: string) {
-    this.logger.debug(`📝 Registration attempt for: ${email}`);
+    this.logger.debug(`Registration attempt for: ${email}`);
     
     try {
       // Check if user exists
@@ -75,7 +75,7 @@ await this.usersRepository.create(user);
       // Save user
       await this.usersRepository.create(user);
 
-      this.logger.log(`✅ User registered: ${email}`);
+      this.logger.log(`User registered: ${email}`);
       
       return {
         message: 'Registration successful.',

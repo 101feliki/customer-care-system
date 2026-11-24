@@ -14,14 +14,14 @@ export class MailerService {
     const pass = process.env.SMTP_PASS?.trim();
     const fromEmail = process.env.FROM_EMAIL?.trim() || user;
 
-    this.logger.log('🚀 MailerService initializing...');
+    this.logger.log('MailerService initializing...');
     this.logger.log(`   SMTP_HOST   = ${host}`);
     this.logger.log(`   SMTP_PORT   = ${port}`);
     this.logger.log(`   SMTP_USER   = ${user}`);
     this.logger.log(`   FROM_EMAIL  = ${fromEmail}`);
 
     if (!host || !port || !user || !pass) {
-      throw new InternalServerErrorException('❌ Missing SMTP configuration');
+      throw new InternalServerErrorException('Missing SMTP configuration');
     }
 
     this.transporter = nodemailer.createTransport({
@@ -46,7 +46,7 @@ export class MailerService {
       if (err) {
         this.logger.warn('SMTP VERIFY ERROR:', err.message);
       } else {
-        this.logger.log('✅ SMTP connection ready');
+        this.logger.log('SMTP connection ready');
       }
     });
   }
@@ -70,10 +70,10 @@ export class MailerService {
         text: this.htmlToText(finalHtml),
       });
 
-      this.logger.log(`📧 Email sent → ${to} | Message ID: ${info.messageId}`);
+      this.logger.log(`Email sent → ${to} | Message ID: ${info.messageId}`);
       return { success: true, messageId: info.messageId };
     } catch (error: any) {
-      this.logger.error(`❌ Failed to send email → ${to}`, error.message);
+      this.logger.error(`Failed to send email → ${to}`, error.message);
       return { success: false, error: error.message };
     }
   }

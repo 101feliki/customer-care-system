@@ -1,14 +1,14 @@
 # fix-prisma.ps1 - Run as Administrator
 
-Write-Host "🔧 Fixing Prisma permissions..." -ForegroundColor Yellow
+Write-Host "Fixing Prisma permissions..." -ForegroundColor Yellow
 
 # Navigate to backend directory
 Set-Location "C:\Users\PC\GIT NOTIFICATION\customer-care-system\backend"
 
-Write-Host "📁 Current directory: $(Get-Location)" -ForegroundColor Cyan
+Write-Host "Current directory: $(Get-Location)" -ForegroundColor Cyan
 
 # 1. Kill all Node processes that might be using Prisma files
-Write-Host "`n🛑 Stopping Node processes..." -ForegroundColor Yellow
+Write-Host "`n Stopping Node processes..." -ForegroundColor Yellow
 $nodeProcesses = Get-Process | Where-Object { 
     $_.ProcessName -match 'node|npm|npx' -or 
     ($_.Modules -and $_.Modules.FileName -like '*prisma*') -or
@@ -30,7 +30,7 @@ if ($nodeProcesses) {
 }
 
 # 2. Clear Prisma cache and lock files
-Write-Host "`n🧹 Cleaning Prisma files..." -ForegroundColor Yellow
+Write-Host "`n Cleaning Prisma files..." -ForegroundColor Yellow
 $pathsToRemove = @(
     "node_modules\.prisma",
     "node_modules\@prisma\client",
@@ -52,7 +52,7 @@ foreach ($path in $pathsToRemove) {
 }
 
 # 3. Take ownership of node_modules if needed
-Write-Host "`n🔐 Taking ownership of node_modules..." -ForegroundColor Yellow
+Write-Host "`n Taking ownership of node_modules..." -ForegroundColor Yellow
 if (Test-Path "node_modules") {
     try {
         $acl = Get-Acl "node_modules"
@@ -66,20 +66,20 @@ if (Test-Path "node_modules") {
 }
 
 # 4. Reinstall dependencies
-Write-Host "`n📦 Reinstalling dependencies..." -ForegroundColor Yellow
+Write-Host "`n Reinstalling dependencies..." -ForegroundColor Yellow
 npm cache clean --force
 npm install
 
 # 5. Generate Prisma client
-Write-Host "`n⚙️  Generating Prisma client..." -ForegroundColor Yellow
+Write-Host "`n  Generating Prisma client..." -ForegroundColor Yellow
 npx prisma generate
 
 # 6. Push schema to new database
-Write-Host "`n🚀 Pushing schema to database..." -ForegroundColor Yellow
+Write-Host "`n Pushing schema to database..." -ForegroundColor Yellow
 npx prisma db push --accept-data-loss
 
 # 7. Initialize database
-Write-Host "`n🏁 Initializing database..." -ForegroundColor Yellow
+Write-Host "`n Initializing database..." -ForegroundColor Yellow
 if (Test-Path "init-database.js") {
     node init-database.js
 } else {
@@ -101,7 +101,7 @@ VALUES (
 )
 ON CONFLICT (email) DO NOTHING;
 
-SELECT '✅ Admin user created' as message;
+SELECT 'Admin user created' as message;
 "@
     
     # Save SQL to file
@@ -114,5 +114,5 @@ SELECT '✅ Admin user created' as message;
     Remove-Item "create_admin.sql" -ErrorAction SilentlyContinue
 }
 
-Write-Host "`n✅ All done! You can now run: npm run start:dev" -ForegroundColor Green
-Write-Host "🔗 Login with: admin@birdview.com / admin123" -ForegroundColor Cyan
+Write-Host "`n All done! You can now run: npm run start:dev" -ForegroundColor Green
+Write-Host "Login with: admin@birdview.com / admin123" -ForegroundColor Cyan

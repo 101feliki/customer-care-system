@@ -42,7 +42,7 @@ export class AuthController {
     );
     
     // Log successful login (without password)
-    console.log(`✅ User logged in: ${loginDto.email}`);
+    console.log(`User logged in: ${loginDto.email}`);
     
     return {
       ...result,

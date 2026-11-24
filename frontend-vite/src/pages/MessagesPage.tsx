@@ -22,7 +22,7 @@ const MessagesPage: React.FC = () => {
 
         <main className="p-6">
           <div className="bg-card rounded-xl shadow-sm border border-color p-12 text-center">
-            <div className="text-gray-400 text-6xl mb-4">💬</div>
+            <div className="text-gray-400 text-6xl mb-4"></div>
             <h2 className="text-2xl font-bold text-primary mb-2">Messages Feature</h2>
             <p className="text-secondary mb-6">This feature is currently under development.</p>
             <div className="max-w-md mx-auto text-left bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">

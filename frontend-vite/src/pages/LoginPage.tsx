@@ -53,7 +53,7 @@ class AuthService {
   // Login user
   static async login(credentials: LoginCredentials): Promise<LoginResponse> {
     try {
-      console.log(`🔐 Attempting login to: ${API_BASE_URL}/auth/login`);
+      console.log(`Attempting login to: ${API_BASE_URL}/auth/login`);
       
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
@@ -63,7 +63,7 @@ class AuthService {
         body: JSON.stringify(credentials),
       });
 
-      console.log('📡 Login response status:', response.status);
+      console.log('Login response status:', response.status);
       
       const data = await response.json();
       
@@ -73,7 +73,7 @@ class AuthService {
       
       return data;
     } catch (error) {
-      console.error('❌ Login error:', error);
+      console.error('Login error:', error);
       throw error;
     }
   }
@@ -81,7 +81,7 @@ class AuthService {
   // Forgot password - send reset email
   static async forgotPassword(email: string): Promise<AuthResponse> {
     try {
-      console.log(`🔐 Requesting password reset for: ${email}`);
+      console.log(`Requesting password reset for: ${email}`);
       
       const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
         method: 'POST',
@@ -99,7 +99,7 @@ class AuthService {
       
       return data;
     } catch (error) {
-      console.error('❌ Forgot password error:', error);
+      console.error('Forgot password error:', error);
       throw error;
     }
   }
@@ -107,7 +107,7 @@ class AuthService {
   // Reset password with token
   static async resetPassword(token: string, newPassword: string): Promise<AuthResponse> {
     try {
-      console.log(`🔐 Resetting password with token`);
+      console.log(`Resetting password with token`);
       
       const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
         method: 'POST',
@@ -128,7 +128,7 @@ class AuthService {
       
       return data;
     } catch (error) {
-      console.error('❌ Reset password error:', error);
+      console.error('Reset password error:', error);
       throw error;
     }
   }
@@ -137,7 +137,7 @@ class AuthService {
   static extractUserData(response: LoginResponse): { token: string; user: any } {
     // Check for accessToken (camelCase)
     if (response.accessToken) {
-      console.log('✅ Found accessToken (camelCase)');
+      console.log('Found accessToken (camelCase)');
       return {
         token: response.accessToken,
         user: response.user || {
@@ -151,7 +151,7 @@ class AuthService {
     
     // Check for access_token (snake_case)
     if (response.access_token) {
-      console.log('✅ Found access_token (snake_case)');
+      console.log('Found access_token (snake_case)');
       return {
         token: response.access_token,
         user: response.user || {
@@ -165,7 +165,7 @@ class AuthService {
     
     // Check for token
     if (response.token) {
-      console.log('✅ Found token');
+      console.log('Found token');
       return {
         token: response.token,
         user: response.user || {
@@ -177,7 +177,7 @@ class AuthService {
       };
     }
     
-    console.error('❌ No valid token structure found in response:', response);
+    console.error('No valid token structure found in response:', response);
     throw new Error('Invalid login response format from server');
   }
 }
@@ -214,7 +214,7 @@ const LoginPage: React.FC = () => {
     const token = params.get('token');
     
     if (token) {
-      console.log('🔑 Reset token found in URL');
+      console.log('Reset token found in URL');
       setResetToken(token);
       setShowResetPassword(true);
       setShowForgotPassword(false);
@@ -240,7 +240,7 @@ const LoginPage: React.FC = () => {
       navigate('/dashboard');
       
     } catch (err) {
-      console.error('❌ Login error:', err);
+      console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
     } finally {
       setLoading(false);
@@ -271,7 +271,7 @@ const LoginPage: React.FC = () => {
       }, 5000);
       
     } catch (err) {
-      console.error('❌ Forgot password error:', err);
+      console.error('Forgot password error:', err);
       setForgotError(err instanceof Error ? err.message : 'Failed to send reset instructions. Please try again.');
     } finally {
       setForgotLoading(false);
@@ -319,7 +319,7 @@ const LoginPage: React.FC = () => {
       }, 3000);
       
     } catch (err) {
-      console.error('❌ Reset password error:', err);
+      console.error('Reset password error:', err);
       setResetError(err instanceof Error ? err.message : 'Failed to reset password. Please try again.');
     } finally {
       setResetLoading(false);

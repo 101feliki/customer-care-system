@@ -324,15 +324,15 @@ const TemplatesPage: React.FC = () => {
       setIsLoading(true);
       setError('');
       
-      console.log(`🔍 Fetching templates from: ${API_BASE_URL}`);
+      console.log(`Fetching templates from: ${API_BASE_URL}`);
       const fetchedTemplates = await TemplateAPIService.fetchTemplates(token);
       setTemplates(fetchedTemplates);
       
       if (fetchedTemplates.length === 0) {
-        console.log('ℹ️ No templates found in database');
+        console.log('No templates found in database');
       }
     } catch (err) {
-      console.error('❌ Error fetching templates:', err);
+      console.error('Error fetching templates:', err);
       setError(`Could not load templates: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setTemplates([]);
     } finally {
@@ -343,14 +343,14 @@ const TemplatesPage: React.FC = () => {
   // 2. Fetch recipients for sending and display
   const fetchRecipients = async () => {
     if (!token) {
-      console.log('❌ No token for fetching recipients');
+      console.log('No token for fetching recipients');
       return;
     }
     
     try {
       setRecipientsLoading(true);
       
-      console.log(`🔍 Fetching recipients from: ${API_BASE_URL}`);
+      console.log(`Fetching recipients from: ${API_BASE_URL}`);
       const fetchedRecipients = await TemplateAPIService.fetchRecipients(token);
       setRecipients(fetchedRecipients);
       
@@ -359,7 +359,7 @@ const TemplatesPage: React.FC = () => {
       setRecipientStats(stats);
       
     } catch (err) {
-      console.error('❌ Error fetching recipients:', err);
+      console.error('Error fetching recipients:', err);
     } finally {
       setRecipientsLoading(false);
     }
@@ -408,13 +408,13 @@ const TemplatesPage: React.FC = () => {
       }
 
       if (isEditMode) {
-        console.log(`📝 Updating template at: ${API_BASE_URL}/templates/${formData.id}`);
+        console.log(`Updating template at: ${API_BASE_URL}/templates/${formData.id}`);
         await TemplateAPIService.updateTemplate(token, formData.id, requestBody);
-        alert('✅ Template Updated!');
+        alert('Template Updated!');
       } else {
-        console.log(`📝 Creating template at: ${API_BASE_URL}/templates`);
+        console.log(`Creating template at: ${API_BASE_URL}/templates`);
         await TemplateAPIService.createTemplate(token, requestBody);
-        alert('✅ Template Created!');
+        alert('Template Created!');
       }
 
       setShowModal(false);
@@ -422,7 +422,7 @@ const TemplatesPage: React.FC = () => {
       
     } catch (err) {
       console.error('Error saving template:', err);
-      alert(`❌ Error saving template: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      alert(`Error saving template: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
@@ -436,13 +436,13 @@ const TemplatesPage: React.FC = () => {
     if(!window.confirm('Are you sure you want to delete this template?')) return;
 
     try {
-      console.log(`🗑️ Deleting template at: ${API_BASE_URL}/templates/${id}`);
+      console.log(`Deleting template at: ${API_BASE_URL}/templates/${id}`);
       await TemplateAPIService.deleteTemplate(token, id);
       setTemplates(prev => prev.filter(t => t.id !== id));
-      alert('✅ Template deleted successfully');
+      alert('Template deleted successfully');
     } catch (err) {
       console.error('Delete error:', err);
-      alert('❌ Failed to delete template');
+      alert('Failed to delete template');
     }
   };
 
@@ -490,14 +490,14 @@ const TemplatesPage: React.FC = () => {
         variables: variableValues
       };
 
-      console.log(`📤 Sending notifications to: ${API_BASE_URL}/bulk-notifications/send`);
+      console.log(`Sending notifications to: ${API_BASE_URL}/bulk-notifications/send`);
       const response = await TemplateAPIService.sendBulkNotifications(token, payload);
 
-      alert(`✅ ${response.message || `Notifications sent to ${selectedRecipientDetails.length} recipient(s)!`}`);
+      alert(`${response.message || `Notifications sent to ${selectedRecipientDetails.length} recipient(s)!`}`);
       setShowSendModal(false);
       
     } catch (error) {
-      console.error('❌ Error sending notification:', error);
+      console.error('Error sending notification:', error);
       
       // User-friendly error messages
       let errorMsg = 'Failed to send notification';
@@ -1115,21 +1115,21 @@ const TemplatesPage: React.FC = () => {
                     <div className="space-y-2">
                       {formData.type === 'EMAIL' ? (
                         <>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">✓ Subject under 60 characters</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">✓ Clear call-to-action</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">✓ Mobile responsive design</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Subject under 60 characters</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Clear call-to-action</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Mobile responsive design</div>
                         </>
                       ) : formData.type === 'SMS' ? (
                         <>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">✓ Keep under 160 characters</div>
-                          <div className="text-xs text-gray500 dark:text-gray-400">✓ Clear, concise language</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">✓ Include opt-out instructions</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Keep under 160 characters</div>
+                          <div className="text-xs text-gray500 dark:text-gray-400">Clear, concise language</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Include opt-out instructions</div>
                         </>
                       ) : (
                         <>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">✓ Title under 30 characters</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">✓ Body under 100 characters</div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">✓ Clear action button text</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Title under 30 characters</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Body under 100 characters</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">Clear action button text</div>
                         </>
                       )}
                     </div>

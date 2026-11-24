@@ -648,7 +648,7 @@ const RecipientsPage: React.FC = () => {
                 
                 {filteredRecipients.length === 0 && !loading && (
                   <div className="text-center py-12">
-                    <div className="text-gray-400 text-4xl mb-4">👤</div>
+                    <div className="text-gray-400 text-4xl mb-4"></div>
                     <h3 className="text-lg font-medium text-primary">No recipients found</h3>
                     <p className="text-secondary">Try adding a new recipient or upload a CSV file</p>
                     <div className="mt-4 flex justify-center space-x-3">

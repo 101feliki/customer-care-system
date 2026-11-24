@@ -254,7 +254,7 @@ const Dashboard: React.FC = () => {
                   </div>
                 ) : filteredNotifications.length === 0 ? (
                   <div className="text-center py-8">
-                    <div className="text-gray-400 text-3xl mb-3">📭</div>
+                    <div className="text-gray-400 text-3xl mb-3"></div>
                     <h3 className="text-base font-medium text-primary">No notifications found</h3>
                     <p className="text-sm text-secondary">Try adjusting your filters</p>
                   </div>
